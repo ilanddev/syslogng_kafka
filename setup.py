@@ -10,7 +10,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    ['kafka-python==1.2.1']
+    ['kafka-python==1.2.2']
 ]
 
 test_requirements = ['bumpversion==0.5.3',
