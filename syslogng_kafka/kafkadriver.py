@@ -7,6 +7,8 @@ Inspired from the syslog-ng documentation.
 https://syslog-ng.gitbooks.io/getting-started/content/chapters/chapter_5/section_3.html
 """
 
+from __future__ import print_function
+
 import time
 
 from kafka.common import LeaderNotAvailableError
@@ -52,12 +54,12 @@ class KafkaDestination(LogDestination):
         self.is_available = None
 
     def init(self, args):
-        print "Initialization of Kafka Python driver w/ args=%s" % args
+        print("Initialization of Kafka Python driver w/ args=%s" % args)
         try:
             self.hosts = args['hosts']
             self.topic = args['topic']
         except KeyError:
-            print "Missing `hosts` or `topic` option..."
+            print("Missing `hosts` or `topic` option...")
             return False
         self.kafka_producer = KafkaProducer(bootstrap_servers=self.hosts)
         return True
@@ -75,12 +77,12 @@ class KafkaDestination(LogDestination):
     def send(self, msg):
         msg_string = str(msg)
         try:
-            print msg.values()
+            print(msg.values())
             print(self.kafka_producer.send(self.topic, msg_string))
         except LeaderNotAvailableError:
             try:
                 time.sleep(1)
-                print_response(self.kafka_producer.send(self.topic, msg_string))
+                print(self.kafka_producer.send(self.topic, msg_string))
             except:
                 return False
         return True
