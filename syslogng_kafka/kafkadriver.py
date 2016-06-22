@@ -9,6 +9,7 @@ https://syslog-ng.gitbooks.io/getting-started/content/chapters/chapter_5/section
 
 from __future__ import print_function
 
+import datetime
 import time
 
 from kafka.common import LeaderNotAvailableError
@@ -46,6 +47,14 @@ class LogDestination(object):
         pass
 
 
+# convert '%b %d %H:%M:%S date string format to UNIX timestamp in local time
+def date_str_to_timestamp(date_str):
+    date = datetime.datetime.now()
+    msg = datetime.datetime.strptime(date_str, '%b %d %H:%M:%S')
+    date = date.replace(hour=msg.hour, minute=msg.minute, second=msg.second)
+    return date.strftime("%s")
+
+
 class KafkaDestination(LogDestination):
     def __init__(self):
         self.hosts = None
@@ -75,6 +84,9 @@ class KafkaDestination(LogDestination):
         return True
 
     def send(self, msg):
+        msg_date = msg.get('DATE')
+        if msg_date is not None:
+            msg['DATE'] = date_str_to_timestamp(msg_date)
         msg_string = str(msg)
         try:
             print(msg.values())
