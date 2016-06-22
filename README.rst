@@ -25,7 +25,7 @@ syslog-ng mod-python Kafka driver
 Introduction
 ============
 
-XXX
+TODO
 
 ================
 Getting the code
