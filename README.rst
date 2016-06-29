@@ -37,13 +37,6 @@ simple Python component leveraging `syslog-ng-mod-python`.
 Ubuntu 16.04 syslog-ng 3.7.x installation
 =========================================
 
-Install Oracle JDK::
-
-    $ sudo apt-get install python-software-properties software-properties-common
-    $ sudo apt-add-repository ppa:webupd8team/java
-    $ sudo apt-get update
-    $ sudo apt-get install oracle-java8-set-default
-
 Install syslog-ng 3.7.x::
 
     $ wget -qO -  http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_16.04/Release.key | sudo apt-key add -
@@ -54,14 +47,6 @@ Install syslog-ng 3.7.x::
 
     $ apt-get update
     $ apt-get install syslog-ng-core syslog-ng-mod-python
-
-Work around a Java bug::
-
-    $ vim /etc/ld.so.conf.d/java.conf
-
-    >>  /usr/lib/jvm/java-8-oracle/jre/lib/amd64/server/
-
-    $ ldconfig -v | grep jvm
 
 Install syslog-ng kafka driver::
 
