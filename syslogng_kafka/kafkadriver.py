@@ -63,7 +63,7 @@ class KafkaDestination(LogDestination):
         self.kafka_producer = None
         self.topic = None
         self.is_available = None
-        self.programs=None
+        self.programs = None
 
     def init(self, args):
         print("Initialization of Kafka Python driver w/ args=%s" % args)
