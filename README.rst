@@ -14,7 +14,7 @@ syslog-ng Kafka driver
 
 .. image:: https://requires.io/github/ilanddev/syslogng_kafka/requirements.svg?branch=master
     :target: https://requires.io/github/ilanddev/syslogng_kafka/requirements/?branch=master
-    	:alt: Requirements Status
+        :alt: Requirements Status
 
 
 syslog-ng mod-python Kafka driver
