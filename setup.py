@@ -16,11 +16,11 @@ requirements = [
 test_requirements = ['bumpversion==0.5.3',
                      'wheel>=0.29.0',
                      'watchdog==0.8.3',
-                     'flake8==2.5.4',
+                     'flake8==2.6.2',
                      'tox==2.3.1',
                      'coverage==4.0.3',
                      'Sphinx==1.3.6',
-                     'requests_mock==0.7.0'],
+                    ],
 
 setup(
     name='syslogng_kafka',

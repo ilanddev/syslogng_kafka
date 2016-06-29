@@ -51,7 +51,9 @@ class LogDestination(object):
 def date_str_to_timestamp(date_str):
     date = datetime.datetime.now()
     msg = datetime.datetime.strptime(date_str, '%b %d %H:%M:%S')
-    date = date.replace(hour=msg.hour, minute=msg.minute, second=msg.second)
+    date = date.replace(
+        year=date.year, month=msg.month, day=msg.day,
+        hour=msg.hour, minute=msg.minute, second=msg.second)
     return date.strftime("%s")
 
 
