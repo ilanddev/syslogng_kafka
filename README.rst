@@ -98,7 +98,8 @@ Configure the syslog-ng Python driver::
 
     $ vim /etc/syslog-ng/conf.d/kafka.conf
 
-Sample driver configuration::
+Sample driver configuration using the optional `programs` to filter out
+before forwarding to Kafka::
 
     destination syslog_to_kafka {
         python(
@@ -107,6 +108,7 @@ Sample driver configuration::
                     options(
                         hosts("localhost:9092,localhost:9182")
                         topic("syslog")
+                        programs("firewall,nat")
                     )
                     value-pairs(scope(rfc5424))
         );

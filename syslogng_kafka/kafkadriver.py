@@ -63,6 +63,7 @@ class KafkaDestination(LogDestination):
         self.kafka_producer = None
         self.topic = None
         self.is_available = None
+        self.programs=None
 
     def init(self, args):
         print("Initialization of Kafka Python driver w/ args=%s" % args)
@@ -72,6 +73,10 @@ class KafkaDestination(LogDestination):
         except KeyError:
             print("Missing `hosts` or `topic` option...")
             return False
+        # optional `programs` parameter to filter out messages
+        if 'programs' in args:
+            self.programs = args['programs'].split(',')
+            print("Found programs to filter against %s" % args['programs'])
         self.kafka_producer = KafkaProducer(bootstrap_servers=self.hosts)
         return True
 
@@ -86,17 +91,25 @@ class KafkaDestination(LogDestination):
         return True
 
     def send(self, msg):
+        # check if we do have a program filter defined.
+        if self.programs is not None:
+            msg_program = msg.get('PROGRAM')
+            if msg_program not in self.programs:
+                # notify of success
+                return True
+        # convert date string to UNIX timestamp
         msg_date = msg.get('DATE')
         if msg_date is not None:
             msg['DATE'] = date_str_to_timestamp(msg_date)
         msg_string = str(msg)
         try:
+            # XXX remove this before going to prod.
             print(msg.values())
-            print(self.kafka_producer.send(self.topic, msg_string))
+            self.kafka_producer.send(self.topic, msg_string)
         except LeaderNotAvailableError:
             try:
                 time.sleep(1)
-                print(self.kafka_producer.send(self.topic, msg_string))
+                self.kafka_producer.send(self.topic, msg_string)
             except:
                 return False
         return True
