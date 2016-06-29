@@ -14,7 +14,7 @@ syslog-ng Kafka driver
 
 .. image:: https://requires.io/github/ilanddev/syslogng_kafka/requirements.svg?branch=master
     :target: https://requires.io/github/ilanddev/syslogng_kafka/requirements/?branch=master
-    :alt: Requirements Status
+    	:alt: Requirements Status
 
 
 syslog-ng mod-python Kafka driver
@@ -114,7 +114,7 @@ To start the service in the foreground and see errors::
 
 Ensure your syslog-ng server is ready to get messages::
 
-    $ netstat -tanpu|grep syslog
+    $ netstat -tanpu | grep syslog
     tcp        0      0 0.0.0.0:514             0.0.0.0:*               LISTEN      11297/syslog-ng
     tcp        0      0 0.0.0.0:1000            0.0.0.0:*               LISTEN      11297/syslog-ng
     udp        0      0 0.0.0.0:514             0.0.0.0:*                           11297/syslog-ng
@@ -154,12 +154,11 @@ Download and install Kafka::
     $ wget http://mirror.stjschools.org/public/apache/kafka/0.8.2.1/kafka_2.11-0.8.2.1.tgz
 
     $ mkdir -p ~/kafka && cd ~/kafka
-    $ tar -xvzf ~/Downloads/kafka_2.11-0.8.2.1.tgz--strip 1
+    $ tar -xvzf ~/Downloads/kafka_2.11-0.8.2.1.tgz --strip 1
 
 Start Kafka::
 
-    $ nohup ~/kafka/bin/kafka-server-start.sh ~/kafka/config/server
-    .properties > ~/kafka/kafka.log 2>&1 &
+    $ nohup ~/kafka/bin/kafka-server-start.sh ~/kafka/config/server.properties > ~/kafka/kafka.log 2>&1 &
 
 Check messages a given topic::
 
