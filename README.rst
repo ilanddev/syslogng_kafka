@@ -10,11 +10,11 @@ syslog-ng Kafka driver
 
 .. image:: https://readthedocs.org/projects/syslogng_kafka/badge/?version=latest
     :target: https://syslogng_kafka.readthedocs.org/en/latest/
-        :alt: Documentation Status
+    :alt: Documentation Status
 
 .. image:: https://requires.io/github/ilanddev/syslogng_kafka/requirements.svg?branch=master
     :target: https://requires.io/github/ilanddev/syslogng_kafka/requirements/?branch=master
-        :alt: Requirements Status
+    :alt: Requirements Status
 
 
 syslog-ng mod-python Kafka driver
