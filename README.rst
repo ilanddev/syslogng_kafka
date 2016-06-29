@@ -3,23 +3,24 @@ syslog-ng Kafka driver
 ===============================
 
 .. image:: https://img.shields.io/pypi/v/syslogng_kafka.svg
-:target: https://pypi.python.org/pypi/syslogng_kafka
+    :target: https://pypi.python.org/pypi/syslogng_kafka
 
 .. image:: https://travis-ci.org/ilanddev/syslogng_kafka.svg?branch=master
-:target: https://travis-ci.org/ilanddev/syslogng_kafka
+    :target: https://travis-ci.org/ilanddev/syslogng_kafka
 
 .. image:: https://readthedocs.org/projects/syslogng_kafka/badge/?version=latest
-:target: https://syslogng_kafka.readthedocs.org/en/latest/
+    :target: https://syslogng_kafka.readthedocs.org/en/latest/
         :alt: Documentation Status
 
 .. image:: https://requires.io/github/ilanddev/syslogng_kafka/requirements.svg?branch=master
-:target: https://requires.io/github/ilanddev/syslogng_kafka/requirements/?branch=master
-     :alt: Requirements Status
+    :target: https://requires.io/github/ilanddev/syslogng_kafka/requirements/?branch=master
+    :alt: Requirements Status
 
-        syslog-ng mod-python Kafka driver
 
-        * Free software: Apache Software License 2.0
-        * Documentation: https://syslogng-kafka.readthedocs.io.
+syslog-ng mod-python Kafka driver
+
+* Free software: Apache Software License 2.0
+* Documentation: https://syslogng-kafka.readthedocs.io.
 
 ============
 Introduction
