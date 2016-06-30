@@ -9,15 +9,17 @@ https://syslog-ng.gitbooks.io/getting-started/content/chapters/chapter_5/section
 
 from __future__ import print_function
 
-import datetime
 import time
 
 from kafka.common import LeaderNotAvailableError
 from kafka.producer import KafkaProducer
 
+from util import date_str_to_timestamp
+from util import parse_str_list
+
 
 class LogDestination(object):
-    """Inspired from syslog-ng 3.5 documentation.
+    """Inspired from syslog-ng 3.7 documentation.
     """
 
     def open(self):
@@ -47,16 +49,6 @@ class LogDestination(object):
         pass
 
 
-# convert '%b %d %H:%M:%S date string format to UNIX timestamp in local time
-def date_str_to_timestamp(date_str):
-    date = datetime.datetime.now()
-    msg = datetime.datetime.strptime(date_str, '%b %d %H:%M:%S')
-    date = date.replace(
-        year=date.year, month=msg.month, day=msg.day,
-        hour=msg.hour, minute=msg.minute, second=msg.second)
-    return date.strftime("%s")
-
-
 class KafkaDestination(LogDestination):
     def __init__(self):
         self.hosts = None
@@ -75,7 +67,7 @@ class KafkaDestination(LogDestination):
             return False
         # optional `programs` parameter to filter out messages
         if 'programs' in args:
-            self.programs = args['programs'].split(',')
+            self.programs = parse_str_list(args['programs'])
             print("Found programs to filter against %s" % args['programs'])
         self.kafka_producer = KafkaProducer(bootstrap_servers=self.hosts)
         return True
