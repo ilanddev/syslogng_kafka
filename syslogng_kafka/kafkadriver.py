@@ -14,8 +14,8 @@ import time
 from kafka.common import LeaderNotAvailableError
 from kafka.producer import KafkaProducer
 
-from util import date_str_to_timestamp
-from util import parse_str_list
+from .util import date_str_to_timestamp
+from .util import parse_str_list
 
 
 class LogDestination(object):

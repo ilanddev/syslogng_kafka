@@ -30,4 +30,4 @@ def parse_str_list(list_str):
     """
     # remove all whitespace characters (space, tab, newline, etc.) and ignore
     # possible ending coma with filter.
-    return filter(None, ''.join(list_str.split()).split(','))
+    return list(filter(None, ''.join(list_str.split()).split(',')))
