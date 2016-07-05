@@ -16,6 +16,7 @@ from kafka.producer import KafkaProducer
 
 from .util import date_str_to_timestamp
 from .util import parse_str_list
+from .util import parse_firewall_msg
 
 
 class LogDestination(object):
@@ -84,11 +85,14 @@ class KafkaDestination(LogDestination):
 
     def send(self, msg):
         # check if we do have a program filter defined.
+        msg_program = msg.get('PROGRAM')
         if self.programs is not None:
-            msg_program = msg.get('PROGRAM')
             if msg_program not in self.programs:
                 # notify of success
                 return True
+        if msg_program == 'firewall':
+            firewall_msg = msg.get('MESSAGE')
+            msg['MESSAGE'] = parse_firewall_msg(firewall_msg)
         # convert date string to UNIX timestamp
         msg_date = msg.get('DATE')
         if msg_date is not None:
