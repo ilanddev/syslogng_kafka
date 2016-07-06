@@ -32,6 +32,7 @@ def parse_str_list(list_str):
     # possible ending coma with filter.
     return list(filter(None, ''.join(list_str.split()).split(',')))
 
+
 def parse_firewall_msg(msg):
     """ Parse a syslog message from the firewall program into a python
     dictionary.
