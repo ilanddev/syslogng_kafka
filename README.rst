@@ -48,14 +48,20 @@ Install syslog-ng 3.7.x::
     $ vim /etc/apt/preferences.d/syslog-ng
 
         Package: syslog-ng
+        Pin: origin "download.opensuse.org"
         Pin: version 3.7*
         Pin-Priority: 550
-
-    $ vim /etc/apt/preferences.d/syslog-ng-mod-python
 
         Package: syslog-ng-mod-python
+        Pin: origin "download.opensuse.org"
         Pin: version 3.7*
         Pin-Priority: 550
+
+        Package: syslog-ng-mod-journal
+        Pin: origin "download.opensuse.org"
+        Pin: version 3.7*
+        Pin-Priority: 550
+
 
     $ apt-get update
     $ apt-get install syslog-ng-core syslog-ng-mod-python
