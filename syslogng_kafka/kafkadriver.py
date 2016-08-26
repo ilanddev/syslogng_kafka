@@ -99,8 +99,6 @@ class KafkaDestination(LogDestination):
             msg['DATE'] = date_str_to_timestamp(msg_date)
         msg_string = str(msg)
         try:
-            # XXX remove this before going to prod.
-            print(msg.values())
             self.kafka_producer.send(self.topic, msg_string)
         except LeaderNotAvailableError:
             try:
