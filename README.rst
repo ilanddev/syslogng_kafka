@@ -1,6 +1,6 @@
-===============================
+======================
 syslog-ng Kafka driver
-===============================
+======================
 
 .. image:: https://img.shields.io/pypi/v/syslogng_kafka.svg
     :target: https://pypi.python.org/pypi/syslogng_kafka
@@ -47,7 +47,7 @@ Install syslog-ng 3.7.x::
 
     $ vim /etc/apt/preferences.d/syslog-ng
 
-        Package: syslog-ng
+        Package: syslog-ng-core
         Pin: origin "download.opensuse.org"
         Pin: version 3.7*
         Pin-Priority: 550
@@ -56,12 +56,6 @@ Install syslog-ng 3.7.x::
         Pin: origin "download.opensuse.org"
         Pin: version 3.7*
         Pin-Priority: 550
-
-        Package: syslog-ng-mod-journal
-        Pin: origin "download.opensuse.org"
-        Pin: version 3.7*
-        Pin-Priority: 550
-
 
     $ apt-get update
     $ apt-get install syslog-ng-core syslog-ng-mod-python
