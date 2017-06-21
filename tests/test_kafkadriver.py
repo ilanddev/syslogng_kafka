@@ -33,7 +33,7 @@ class TestKafkaDestinaton(unittest.TestCase):
         date_str = 'Jun 22 12:49:16'
         ts = date_str_to_timestamp(date_str)
         # FIXME will break next year
-        expected_ts = '1466599756'
+        expected_ts = '1498153756'
         self.assertEqual(expected_ts, ts)
 
     def test_parser_str_list(self):

@@ -1,19 +1,19 @@
-syslogng_kafka package
-======================
+syslogng\_kafka package
+=======================
 
 Submodules
 ----------
 
-syslogng_kafka.kafkadriver module
----------------------------------
+syslogng\_kafka\.kafkadriver module
+-----------------------------------
 
 .. automodule:: syslogng_kafka.kafkadriver
     :members:
     :undoc-members:
     :show-inheritance:
 
-syslogng_kafka.util module
---------------------------
+syslogng\_kafka\.util module
+----------------------------
 
 .. automodule:: syslogng_kafka.util
     :members:
