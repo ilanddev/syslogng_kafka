@@ -42,11 +42,12 @@ setup(
     zip_safe=False,
     keywords='syslogng kafka',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: System Administrators',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7'
     ],
     test_suite='tests',
