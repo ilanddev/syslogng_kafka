@@ -131,3 +131,19 @@ Ensure your syslog-ng server is ready to get messages::
     tcp        0      0 0.0.0.0:1000            0.0.0.0:*               LISTEN      11297/syslog-ng
     udp        0      0 0.0.0.0:514             0.0.0.0:*                           11297/syslog-ng
 
+
+=========
+Releasing
+=========
+
+::
+
+    $ pip install bumpversion
+
+    $ bumpversion --dry-run --verbose $CURRENT_VERSION --new-version=$NEW_VERSION
+
+    $ bumpversion $CURRENT_VERSION --new-version=$NEW_VERSION
+
+    $ git push
+
+    $ git push --tags origin
