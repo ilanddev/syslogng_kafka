@@ -26,7 +26,7 @@ syslog-ng mod-python Kafka driver
 Introduction
 ============
 
-`syslogng_kafka` provides a Python module for syslog-ng >= 3.7 allowing one
+`syslogng_kafka` provides a Python module for syslog-ng == 3.7 allowing one
 to filter and forward syslog messages to multiple Kafka brokers on a given topic.
 
 We are currently, 2016/06, not using `syslog-ng-mod-kafka` because of the
@@ -49,12 +49,12 @@ Install syslog-ng 3.7.x::
 
         Package: syslog-ng-core
         Pin: origin "download.opensuse.org"
-        Pin: version 3.7*
+        Pin: version 3.7.*
         Pin-Priority: 550
 
         Package: syslog-ng-mod-python
         Pin: origin "download.opensuse.org"
-        Pin: version 3.7*
+        Pin: version 3.7.*
         Pin-Priority: 550
 
     $ apt-get update
@@ -131,53 +131,3 @@ Ensure your syslog-ng server is ready to get messages::
     tcp        0      0 0.0.0.0:1000            0.0.0.0:*               LISTEN      11297/syslog-ng
     udp        0      0 0.0.0.0:514             0.0.0.0:*                           11297/syslog-ng
 
-===============================
-Ubuntu 16.04 Kafka installation
-===============================
-
-Install Oracle JDK::
-
-    $ sudo apt-get install python-software-properties software-properties-common
-    $ sudo apt-add-repository ppa:webupd8team/java
-    $ sudo apt-get update
-    $ sudo apt-get install oracle-java8-set-default
-
-Prepare Kafka user::
-
-    $ sudo useradd kafka -m
-    $ sudo passwd kafka
-    $ sudo adduser kafka sudo
-
-Install Zookeeper::
-
-    $ su - kafka
-    $ sudo apt-get install zookeeperd
-
-Test Zookeeper::
-
-    $ telnet localhost 2181
-
-At the Telnet prompt, type in ruok and press ENTER. You should see imok.
-
-Download and install Kafka::
-
-    $ mkdir -p ~/Downloads
-    $ cd Downloads
-    $ wget http://mirror.stjschools.org/public/apache/kafka/0.8.2.1/kafka_2.11-0.8.2.1.tgz
-
-    $ mkdir -p ~/kafka && cd ~/kafka
-    $ tar -xvzf ~/Downloads/kafka_2.11-0.8.2.1.tgz --strip 1
-
-Start Kafka::
-
-    $ nohup ~/kafka/bin/kafka-server-start.sh ~/kafka/config/server.properties > ~/kafka/kafka.log 2>&1 &
-
-Check messages a given topic::
-
-    $ ./bin/kafka-console-consumer.sh --from-beginning --zookeeper
-    localhost:2181 --topic syslog
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
