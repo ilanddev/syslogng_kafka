@@ -26,18 +26,64 @@ syslog-ng mod-python Kafka driver
 Introduction
 ============
 
-`syslogng_kafka` provides a Python module for syslog-ng == 3.7 allowing one
+`syslogng_kafka` provides a Python module for syslog-ng >= 3.7 allowing one
 to filter and forward syslog messages to multiple Kafka brokers on a given topic.
 
 We are currently, 2016/06, not using `syslog-ng-mod-kafka` because of the
 dependencies and state (testing) of this module hence the motivation to use a
 simple Python component leveraging `syslog-ng-mod-python`.
 
-=========================================
-Ubuntu 16.04 syslog-ng 3.7.x installation
-=========================================
+====================================
+Ubuntu 16.04 librdkafka installation
+====================================
 
-Install syslog-ng 3.7.x::
+`syslogng_kafka` depends on the `confluent-kafka` lib: https://github.com/confluentinc/confluent-kafka-python
+
+`confluent-kafka` requires `librdkafka` >= 0.9.1 which is not available from mainstream Ubuntu repositories.
+
+Below is how you can install `librdkafka` using an apt package::
+
+    $ vim /etc/apt/preferences.d/confluent-librdkafka
+
+        Package: librdkafka1
+        Pin: origin "packages.confluent.io"
+        Pin: version 0.9.*
+        Pin-Priority: 550
+
+        Package: librdkafka-dev
+        Pin: origin "packages.confluent.io"
+        Pin: version 0.9.*
+        Pin-Priority: 550
+
+        Package: librdkafka++1
+        Pin: origin "packages.confluent.io"
+        Pin: version 0.9.*
+        Pin-Priority: 550
+
+    $ vim /etc/apt/sources.list.d/confluent-librdkafka.list
+
+        deb [arch=amd64] http://packages.confluent.io/deb/3.2 stable main
+
+    $ curl -fsSL http://packages.confluent.io/deb/3.2/archive.key | apt-key add -
+
+    $ sudo apt-get update
+
+    $ sudo apt-get install librdkafka1 librdkafka-dev
+
+Note, we need to install the `-dev` package so that `pip` can be able to compile `confluent-kafka`
+
+You can as well use the script from this repository that will install the lib from source::
+
+    $ sudo bash tools/bootstrap-librdkafka.sh ${LIBRDKAFKA_VERSION} /usr/local
+    $ sudo ldconfig -vvv
+
+Note this script is used by the Travis CI.
+
+============================================
+Ubuntu 16.04 syslog-ng >= 3.7.x installation
+============================================
+
+Install syslog-ng 3.9.x::
 
     $ wget -qO -  http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_16.04/Release.key | sudo apt-key add -
 
@@ -49,18 +95,20 @@ Install syslog-ng 3.7.x::
 
         Package: syslog-ng-core
         Pin: origin "download.opensuse.org"
-        Pin: version 3.7.*
+        Pin: version 3.9.*
         Pin-Priority: 550
 
         Package: syslog-ng-mod-python
         Pin: origin "download.opensuse.org"
-        Pin: version 3.7.*
+        Pin: version 3.9.*
         Pin-Priority: 550
 
     $ apt-get update
     $ apt-get install syslog-ng-core syslog-ng-mod-python
 
-Install syslog-ng kafka driver::
+==============================
+Install syslog-ng kafka driver
+==============================
 
 At the command line::
 
@@ -102,12 +150,15 @@ before forwarding to Kafka::
         python(
             class("syslogng_kafka.kafkadriver.KafkaDestination")
                 on-error("fallback-to-string")
-                    options(
-                        hosts("localhost:9092,localhost:9182")
-                        topic("syslog")
-                        programs("firewall,nat")
+                options(
+                    hosts("localhost:9092,localhost:9182")
+                    topic("syslog")
+                    programs("firewall,nat")
+                    broker_version("0.8.2.1")
+                    verbose("True")
+                    flush_after("10000")
                     )
-                    value-pairs(scope(rfc5424))
+                value-pairs(scope(rfc5424))
         );
     };
 
@@ -147,3 +198,5 @@ Releasing
     $ git push
 
     $ git push --tags origin
+
+

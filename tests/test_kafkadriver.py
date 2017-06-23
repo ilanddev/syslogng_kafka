@@ -8,118 +8,359 @@ test_syslogng_kafka
 Tests for `syslogng_kafka` module.
 """
 
-import ast
 import sys
 import unittest
 
+from confluent_kafka import KafkaException
+
+from mock import MagicMock
+
+# noinspection PyUnresolvedReferences
+import monkey  # NOQA
+from syslogng_kafka.kafkadriver import DEFAULT_BROKER_VERSION_FALLBACK
+from syslogng_kafka.kafkadriver import DEFAULT_FLUSH_AFTER
 from syslogng_kafka.kafkadriver import KafkaDestination
-from syslogng_kafka.util import date_str_to_timestamp
-from syslogng_kafka.util import parse_str_list
-from syslogng_kafka.util import parse_firewall_msg
 
 
-class TestKafkaDestinaton(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-    def test_smoke(self):
+class TestKafkaDestination(unittest.TestCase):
+    def test_init_missing_params(self):
         dest = KafkaDestination()
-        assert dest is not None
+        conf = dict()
+        self.assertFalse(dest.init(conf))
 
-    def test_date_str_to_ts(self):
-        date_str = 'Jun 22 12:49:16'
-        date_str_to_timestamp(date_str)
-        # FIXME will break next year
-        # expected_ts = '1498135756'
-        # self.assertEqual(expected_ts, ts)
+    def test_init_config_minimum(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, None)
+        self.assertEquals(dest.group_id, None)
+        self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
+        self.assertEquals(
+            dest._conf,
+            {'api.version.request': False,
+             'bootstrap.servers': conf['hosts'],
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK})
 
-    def test_parser_str_list(self):
-        s = 'x'
-        l_s = parse_str_list(s)
-        self.assertListEqual(['x'], l_s)
+    def test_init_config_program(self):
+        # single program to filter against
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'programs': 'firewall'}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, [conf['programs']])
+        self.assertEquals(dest.group_id, None)
+        self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
+        self.assertEquals(
+            dest._conf,
+            {'api.version.request': False,
+             'bootstrap.servers': conf['hosts'],
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK})
 
-        s = 'x,'
-        l_s = parse_str_list(s)
-        self.assertListEqual(['x'], l_s)
+        # multiple programs
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'programs': 'firewall,nat'}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, ['firewall', 'nat'])
+        self.assertEquals(dest.group_id, None)
+        self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
+        self.assertEquals(
+            dest._conf,
+            {'api.version.request': False,
+             'bootstrap.servers': conf['hosts'],
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK})
 
-        s = 'x, '
-        l_s = parse_str_list(s)
-        self.assertListEqual(['x'], l_s)
+        # multiple programs with space after coma.
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'programs': 'firewall, nat'}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, ['firewall', 'nat'])
+        self.assertEquals(dest.group_id, None)
+        self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
+        self.assertEquals(
+            dest._conf,
+            {'api.version.request': False,
+             'bootstrap.servers': conf['hosts'],
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK})
 
-        s = 'x, y'
-        l_s = parse_str_list(s)
-        self.assertListEqual(['x', 'y'], l_s)
+    def test_init_group_config(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'group_id': 'my_group_id'}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, None)
+        self.assertEquals(dest.group_id, conf['group_id'])
+        self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
+        self.assertEquals(
+            dest._conf,
+            {'api.version.request': False,
+             'bootstrap.servers': conf['hosts'],
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
+             'group.id': conf['group_id']})
 
-        s = 'x, y '
-        l_s = parse_str_list(s)
-        self.assertListEqual(['x', 'y'], l_s)
+    def test_init_verbose_config(self):
+        dest_msg = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'verbose': "True"}
+        self.assertTrue(dest_msg.init(conf))
+        self.assertEquals(dest_msg.hosts, conf['hosts'])
+        self.assertEquals(dest_msg.topic, conf['topic'])
+        self.assertEquals(dest_msg.programs, None)
+        self.assertEquals(dest_msg.group_id, None)
+        self.assertEquals(dest_msg.broker_version,
+                          DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest_msg.verbose, True)
+        self.assertEquals(dest_msg.flush_after, DEFAULT_FLUSH_AFTER)
 
-        s = ' x, y '
-        l_s = parse_str_list(s)
-        self.assertListEqual(['x', 'y'], l_s)
+    def test_init_flush_after_config(self):
+        dest_msg = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'flush_after': "10"}
+        self.assertTrue(dest_msg.init(conf))
+        self.assertEquals(dest_msg.hosts, conf['hosts'])
+        self.assertEquals(dest_msg.topic, conf['topic'])
+        self.assertEquals(dest_msg.programs, None)
+        self.assertEquals(dest_msg.group_id, None)
+        self.assertEquals(dest_msg.broker_version,
+                          DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest_msg.verbose, False)
+        self.assertEquals(dest_msg.flush_after, 10)
 
-        s = ' x , y , '
-        l_s = parse_str_list(s)
-        self.assertListEqual(['x', 'y'], l_s)
+    def test_init_broker_version_config_2(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'broker_version': "0.8.2.1"}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, None)
+        self.assertEquals(dest.group_id, None)
+        self.assertEquals(dest.broker_version, conf['broker_version'])
+        self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
 
-        s = ', x , y , '
-        l_s = parse_str_list(s)
-        self.assertListEqual(['x', 'y'], l_s)
+        self.assertEquals(dest._conf['broker.version.fallback'],
+                          conf['broker_version'])
+        self.assertEquals(dest._conf['api.version.request'], False)
 
-        s = ', x , y , ,'
-        l_s = parse_str_list(s)
-        self.assertListEqual(['x', 'y'], l_s)
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'broker_version': "0.9.2.1"}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, None)
+        self.assertEquals(dest.group_id, None)
+        self.assertEquals(dest.broker_version, conf['broker_version'])
+        self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
 
-        s = ''
-        l_s = parse_str_list(s)
-        self.assertListEqual([], l_s)
+        self.assertEquals(dest._conf['broker.version.fallback'],
+                          conf['broker_version'])
+        self.assertEquals(dest._conf['api.version.request'], False)
 
-        s = ' '
-        l_s = parse_str_list(s)
-        self.assertListEqual([], l_s)
+    def test_init_broker_version_config_1(self):
+        dest_10 = KafkaDestination()
+        conf_10 = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                   'broker_version': "0.10.0.1"}
+        self.assertTrue(dest_10.init(conf_10))
+        self.assertEquals(dest_10.hosts, conf_10['hosts'])
+        self.assertEquals(dest_10.topic, conf_10['topic'])
+        self.assertEquals(dest_10.programs, None)
+        self.assertEquals(dest_10.group_id, None)
+        self.assertEquals(dest_10.broker_version, conf_10['broker_version'])
+        self.assertEquals(dest_10.verbose, False)
+        self.assertEquals(dest_10.flush_after, DEFAULT_FLUSH_AFTER)
 
-        s = ' , '
-        l_s = parse_str_list(s)
-        self.assertListEqual([], l_s)
+        self.assertFalse('broker.version.fallback' in dest_10._conf.keys())
+        self.assertEquals(dest_10._conf['api.version.request'], True)
 
-    def test_parse_firewall_msg(self):
-        msg = '[69e9c2b7-ee9f-4a3e-80f0-8ffc66aac147]: DROP_131073IN=vNic_0 ' \
-              'OUT= MAC=ff:ff:ff:ff:ff:ff:00:50:56:bd:70:59:08:00 ' \
-              'SRC=10.11.12.53 ' \
-              'DST=10.11.12.255 LEN=229 TOS=0x00 PREC=0x00 TTL=128 ID=13254 ' \
-              'PROTO=UDP SPT=138 DPT=138 LEN=209 MARK=0x1'
-        msg_s = parse_firewall_msg(msg)
+    def test_open(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
 
-        expected = {'code': -1, 'seq': -1, 'proto': 'UDP', 'tos': '0x00',
-                    'ttl': '128', 'len': '209', 'mark': '0x1',
-                    'src_ip': '10.11.12.53', 'source_port': '138',
-                    'mac_address': 'ff:ff:ff:ff:ff:ff:00:50:56:bd:70:59:08:00',
-                    'action': 'drop', 'destination_port': '138', 'out': '',
-                    'proc': '0x00', 'id': '13254', 'dest_ip': '10.11.12.255'}
+    def test_isopened(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        dest.init(conf)
+        dest.open()
+        self.assertTrue(dest.is_opened())
 
-        d1 = ast.literal_eval(str(expected))
-        self.assertDictEqual(d1, msg_s)
+    def test_init_open_deinit(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        dest.init(conf)
+        dest.open()
 
-        msg = '[69e9c2b7-ee9f-4a3e-80f0-8ffc66aac147]: DROP_131073IN=vNic_0 ' \
-              'OUT= MAC=00:50:56:01:43:50:00:1f:6c:3d:d7:f7:08:00 ' \
-              'SRC=10.11.254.108 DST=10.11.12.181 LEN=84 TOS=0x00 PREC=0x00 ' \
-              'TTL=64 ID=54643 PROTO=ICMP TYPE=8 CODE=0 ID=65299 SEQ=10047 ' \
-              'MARK=0x1'
+        dest._kafka_producer.flush = MagicMock(name='flush')
+        self.assertTrue(dest.deinit())
+        dest._kafka_producer.flush.assert_called_once()
 
-        msg_s = parse_firewall_msg(msg)
+    def test_init_open_close(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+        self.assertTrue(dest.close())
 
-        expected = {'code': '0', 'seq': '10047', 'proto': 'ICMP',
-                    'tos': '0x00', 'ttl': '64', 'len': '84', 'mark': '0x1',
-                    'src_ip': '10.11.254.108', 'source_port': -1,
-                    'mac_address': '00:50:56:01:43:50:00:1f:6c:3d:d7:f7:08:00',
-                    'action': 'drop', 'destination_port': -1, 'out': '',
-                    'proc': '0x00', 'id': '65299', 'dest_ip': '10.11.12.181'}
+    def test_send_empty_message(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
 
-        d1 = ast.literal_eval(str(expected))
-        self.assertDictEqual(d1, msg_s)
+        msg = {}
+
+        dest._kafka_producer.flush = MagicMock(name='flush')
+        dest._kafka_producer.produce = MagicMock(name='produce')
+
+        dest.send(msg)
+
+        dest._kafka_producer.flush.assert_not_called()
+        dest._kafka_producer.produce.assert_not_called()
+
+    def test_send_message(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70'}
+
+        dest._kafka_producer.flush = MagicMock(name='flush')
+        dest._kafka_producer.produce = MagicMock(name='produce')
+
+        dest.send(msg)
+
+        dest._kafka_producer.produce.assert_called_once()
+
+        dest._kafka_producer.flush.assert_not_called()
+
+    def test_send_filter_message(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic', 'programs': 'YYY'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70'}
+
+        dest._kafka_producer.flush = MagicMock(name='flush')
+        dest._kafka_producer.produce = MagicMock(name='produce')
+
+        dest.send(msg)
+
+        dest._kafka_producer.produce.assert_not_called()
+        dest._kafka_producer.flush.assert_not_called()
+
+    def test_send_filter_message_firewall(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'programs': 'firewall', 'verbose': "True"}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+
+        f = '[69e9c2b7-ee9f-4a3e-80f0-8ffc66aac147]: DROP_131073IN=vNic_0 ' \
+            'OUT= MAC=00:50:56:01:43:50:00:1f:6c:3d:d7:f7:08:00 ' \
+            'SRC=10.11.254.108 DST=10.11.12.181 LEN=84 TOS=0x00 PREC=0x00 ' \
+            'TTL=64 ID=54643 PROTO=ICMP TYPE=8 CODE=0 ID=65299 SEQ=10047 ' \
+            'MARK=0x1'
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'firewall',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70',
+               'MESSAGE': f}
+
+        dest._kafka_producer.flush = MagicMock(name='flush')
+        dest._kafka_producer.produce = MagicMock(name='produce')
+
+        dest.send(msg)
+
+        dest._kafka_producer.produce.assert_called_once()
+
+        dest._kafka_producer.flush.assert_not_called()
+
+    def test_send_message_flush(self):
+        log_dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'flush_after': "0"}
+        self.assertTrue(log_dest.init(conf))
+        self.assertTrue(log_dest.open())
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70'}
+
+        log_dest._kafka_producer.flush = MagicMock(name='flush')
+        log_dest._kafka_producer.produce = MagicMock(name='produce')
+
+        log_dest.send(msg)
+
+        log_dest._kafka_producer.produce.assert_called_once()
+
+        log_dest._kafka_producer.flush.assert_called_once()
+
+    def test_produce_fails_KafkaException(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70'}
+
+        dest._kafka_producer.flush = MagicMock(name='flush')
+
+        def produce(topic, msg, **kwargs):
+            raise KafkaException("Fake exception.")
+
+        dest._kafka_producer.produce = produce
+
+        self.assertFalse(dest.send(msg))
+
+        dest._kafka_producer.flush.assert_not_called()
 
 
 if __name__ == '__main__':

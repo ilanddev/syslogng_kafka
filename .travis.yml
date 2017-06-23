@@ -1,27 +1,19 @@
-# Config file for automatic testing at travis-ci.org
-# This file will be regenerated if you run travis_pypi_setup.py
-
-sudo: false
-dist: trusty
-
 language: python
-
-# It is currently necessary to specify python 3.5 when using py35 on Travis,
-# see https://github.com/travis-ci/travis-ci/issues/4794
-matrix:
-  include:
-    - python: 2.7
-      env:
-        - TOX_ENV=py27
-    - python: 2.7
-      env:
-        - TOX_ENV=docs
-    - python: 2.7
-      env:
-        - TOX_ENV=flake8
-
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -U tox
-
-# command to run tests, e.g. python setup.py test
-script: tox -e $TOX_ENV
+sudo: required
+dist: trusty
+python:
+  - "2.7"
+env:
+  matrix:
+    - LIBRDKAFKA_VERSION=v0.9.4
+    - LIBRDKAFKA_VERSION=v0.9.5
+before_install:
+  - sudo bash tools/bootstrap-librdkafka.sh ${LIBRDKAFKA_VERSION} /usr/local
+  - sudo ldconfig -vvv
+  - pip install --upgrade pip
+  - pip install -r requirements_dev.txt
+install:
+  - pip install -v .
+script:
+  - flake8 syslogng_kafka tests
+  - py.test -v --timeout 20 --import-mode append
