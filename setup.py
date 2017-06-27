@@ -9,19 +9,11 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [
-    ['kafka-python>1.3.1']
-]
+with open('requirements.txt') as requirements_file:
+    requirements = requirements_file.read().splitlines()
 
-test_requirements = ['bumpversion==0.5.3',
-                     'wheel>=0.29.0',
-                     'watchdog>=0.8.3',
-                     'flake8>=3.2.1',
-                     'tox>=2.5.0',
-                     'coverage>=4.2',
-                     'Sphinx>=1.5',
-                     'cryptography>=1.6'
-                    ],
+with open('requirements_dev.txt') as requirements_dev_file:
+    test_requirements = requirements_dev_file.read().splitlines()
 
 setup(
     name='syslogng_kafka',
@@ -34,8 +26,7 @@ setup(
     packages=[
         'syslogng_kafka',
     ],
-    package_dir={'syslogng_kafka':
-                 'syslogng_kafka'},
+    package_dir={'syslogng_kafka': 'syslogng_kafka'},
     include_package_data=True,
     install_requires=requirements,
     license="Apache Software License 2.0",

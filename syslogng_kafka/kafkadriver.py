@@ -1,89 +1,133 @@
 # -*- coding: utf-8 -*-
 
-"""A library that provides a syslog-ng Kafka destination.
-
-Inspired from the syslog-ng documentation.
-
-https://syslog-ng.gitbooks.io/getting-started/content/chapters/chapter_5/section_3.html
+"""A library that provides a syslog-ng Apache Kafka destination.
 """
 
-from __future__ import print_function
+from confluent_kafka import Producer
 
-import time
-
-from kafka.common import LeaderNotAvailableError
-from kafka.producer import KafkaProducer
-
+from .log import LOG
 from .util import date_str_to_timestamp
-from .util import parse_str_list
 from .util import parse_firewall_msg
+from .util import parse_str_list
+
+# this is the default broker version fallback defined by `librdkafka`
+DEFAULT_BROKER_VERSION_FALLBACK = '0.9.0.1'
+
+DEFAULT_FLUSH_AFTER = 100000
 
 
-class LogDestination(object):
-    """Inspired from syslog-ng 3.7 documentation.
+class KafkaDestination(object):
+    """ syslog-ng Apache Kafka destination.
     """
 
-    def open(self):
-        """Open a connection to the target service"""
-        return True
+    _kafka_producer = None
 
-    def close(self):
-        """Close the connection to the target service"""
-        pass
+    _conf = dict()
 
-    def is_opened(self):
-        """Check if the connection to the target is able to receive messages"""
-        return True
-
-    def init(self, args):
-        """This method is called at initialization time"""
-        return True
-
-    def deinit(self):
-        """This method is called at deinitialization time"""
-        pass
-
-    def send(self, msg):
-        """Send a message to the target service
-        It should return True to indicate success, False will suspend the
-        destination for a period specified by the time-reopen() option."""
-        pass
-
-
-class KafkaDestination(LogDestination):
     def __init__(self):
         self.hosts = None
-        self.kafka_producer = None
         self.topic = None
-        self.is_available = None
         self.programs = None
+        self.group_id = None
+        self.broker_version = None
+        self.verbose = False
+        self.flush_after = None
 
     def init(self, args):
-        print("Initialization of Kafka Python driver w/ args=%s" % args)
+        """ This method is called at initialization time.
+
+        Should return False if initialization fails.
+        """
+        LOG.info(
+            "Initialization of Kafka Python driver w/ args=%s" % args)
         try:
             self.hosts = args['hosts']
             self.topic = args['topic']
+            self._conf['bootstrap.servers'] = self.hosts
         except KeyError:
-            print("Missing `hosts` or `topic` option...")
+            LOG.error("Missing `hosts` or `topic` option...")
             return False
+
         # optional `programs` parameter to filter out messages
         if 'programs' in args:
             self.programs = parse_str_list(args['programs'])
-            print("Found programs to filter against %s" % args['programs'])
-        self.kafka_producer = KafkaProducer(bootstrap_servers=self.hosts)
+            LOG.info("Programs to filter against %s" % self.programs)
+        if 'group_id' in args:
+            self.group_id = args['group_id']
+            self._conf['group.id'] = self.group_id
+            LOG.info("Broker group_id=%s" % self.group_id)
+        if 'broker_version' in args:
+            self.broker_version = args['broker_version']
+            if '.'.join(self.broker_version.split('.')[:2]) == '0.10':
+                self._conf['api.version.request'] = True
+            else:
+                self._conf['broker.version.fallback'] = self.broker_version
+                self._conf['api.version.request'] = False
+            LOG.info("Broker version=%s" % self.broker_version)
+        else:
+            self.broker_version = DEFAULT_BROKER_VERSION_FALLBACK
+            self._conf[
+                'broker.version.fallback'] = DEFAULT_BROKER_VERSION_FALLBACK
+            self._conf['api.version.request'] = False
+            LOG.warn("Default broker version fallback %s "
+                     "will be applied here." % DEFAULT_BROKER_VERSION_FALLBACK)
+        if 'verbose' in args:
+            self.verbose = bool(args['verbose'])
+        if 'flush_after' in args:
+            self.flush_after = int(args['flush_after'])
+        else:
+            self.flush_after = DEFAULT_FLUSH_AFTER
+        LOG.info("Flush will occur if %d messages are waiting to be "
+                 "delivered" % self.flush_after)
+
         return True
 
     def open(self):
+        """ Open a connection to the Kafka service.
+
+        Should return False if initialization fails.
+        """
+        LOG.info("Opening connection to the remote Kafka services.")
+        self._kafka_producer = Producer(**self._conf)
         return True
 
+    def is_opened(self):
+        """ Check if the connection to Kafka is able to receive messages.
+
+        Should return False if target is not open.
+        """
+        return self._kafka_producer is not None
+
     def close(self):
-        self.kafka_producer.close()
+        """ Close the connection to the Kafka service.
+        """
+        LOG.debug("KafkaDestination.close()....")
+        # no `close()` method on Consumer API
+        if self._kafka_producer is not None:
+            self._kafka_producer = None
         return True
 
     def deinit(self):
+        """ This method is called at deinitialization time.
+        """
+        LOG.debug("KafkaDestination.deinit()....")
+        if self._kafka_producer is not None:
+            self._kafka_producer.flush(30)
         return True
 
     def send(self, msg):
+        """ Send a message to the target service
+
+        It should return True to indicate success, False will suspend the
+        destination for a period specified by the time-reopen() option.
+
+        :return: True or False
+        """
+
+        # do nothing if msg is empty
+        if not msg:
+            return True
+
         # check if we do have a program filter defined.
         msg_program = msg.get('PROGRAM')
         if self.programs is not None:
@@ -97,13 +141,31 @@ class KafkaDestination(LogDestination):
         msg_date = msg.get('DATE')
         if msg_date is not None:
             msg['DATE'] = date_str_to_timestamp(msg_date)
+
         msg_string = str(msg)
+
         try:
-            self.kafka_producer.send(self.topic, msg_string)
-        except LeaderNotAvailableError:
-            try:
-                time.sleep(1)
-                self.kafka_producer.send(self.topic, msg_string)
-            except:
-                return False
+            self._kafka_producer.produce(
+                self.topic, msg_string, callback=self._acked)
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+            return False
+        finally:
+            queued = len(self._kafka_producer)
+            if queued >= self.flush_after:
+                LOG.info(
+                    "Flushing message per configuration. "
+                    "After=%d messages." % self.flush_after)
+                queued_after = self._kafka_producer.flush(10)
+                if queued_after == queued:
+                    LOG.warning("We having issues flushing the producer. "
+                                "Is Kafka available?")
         return True
+
+    def _acked(self, err, msg):
+        if err is not None:
+            LOG.error("Failed to deliver message: {0}: {1}"
+                      .format(msg.value(), err.str()))
+        else:
+            if self.verbose:
+                LOG.debug("Message produced: {0}".format(msg.value()))

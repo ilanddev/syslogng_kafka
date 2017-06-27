@@ -12,6 +12,14 @@ syslogng\_kafka\.kafkadriver module
     :undoc-members:
     :show-inheritance:
 
+syslogng\_kafka\.log module
+---------------------------
+
+.. automodule:: syslogng_kafka.log
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 syslogng\_kafka\.util module
 ----------------------------
 

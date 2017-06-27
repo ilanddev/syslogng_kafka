@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to syslog-ng Kafka driver's documentation!
-======================================
+==================================================
 
 Contents:
 
@@ -13,8 +13,10 @@ Contents:
 
    readme
    installation
+   modules
    contributing
-   authorshistory
+   history
+   authors
 
 Indices and tables
 ==================
