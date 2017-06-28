@@ -3,7 +3,11 @@
 """A library that provides a syslog-ng Apache Kafka destination.
 """
 
+import ast
+from time import sleep
+
 from confluent_kafka import Producer
+from confluent_kafka import KafkaException
 
 from .log import LOG
 from .util import date_str_to_timestamp
@@ -12,10 +16,6 @@ from .util import parse_str_list
 
 # this is the default broker version fallback defined by `librdkafka`
 DEFAULT_BROKER_VERSION_FALLBACK = '0.9.0.1'
-
-DEFAULT_FLUSH_AFTER = 10000
-
-DEFAULT_MAX_MSG_WAITING = 1000000
 
 
 class KafkaDestination(object):
@@ -29,14 +29,13 @@ class KafkaDestination(object):
     def __init__(self):
         self.hosts = None
         self.topic = None
-        self.key = None
+        self.msg_key = None
         self.partition = None
         self.programs = None
         self.group_id = None
         self.broker_version = None
         self.verbose = False
-        self.flush_after = None
-        self.msg_waiting_max = None
+        self.producer_config = None
 
     def init(self, args):
         """ This method is called at initialization time.
@@ -45,6 +44,15 @@ class KafkaDestination(object):
         """
         LOG.info(
             "Initialization of Kafka Python driver w/ args=%s" % args)
+
+        if 'producer_config' in args:
+            try:
+                self.producer_config = ast.literal_eval(args['producer_config'])
+                self._conf.update(self.producer_config)
+            except ValueError:
+                LOG.error("Given config %s is not in a Python dict format."
+                          % args['producer_config'])
+
         try:
             self.hosts = args['hosts']
             self.topic = args['topic']
@@ -53,9 +61,9 @@ class KafkaDestination(object):
             LOG.error("Missing `hosts` or `topic` option...")
             return False
 
-        if 'key' in args:
-            self.key = args['key']
-            LOG.info("Message key used will be %s" % self.key)
+        if 'msg_key' in args:
+            self.msg_key = args['msg_key']
+            LOG.info("Message key used will be %s" % self.msg_key)
 
         if 'partition' in args:
             self.partition = args['partition']
@@ -88,22 +96,11 @@ class KafkaDestination(object):
                      "will be applied here." % DEFAULT_BROKER_VERSION_FALLBACK)
 
         if 'verbose' in args:
-            self.verbose = bool(args['verbose'])
-
-        if 'flush_after' in args:
-            self.flush_after = int(args['flush_after'])
-        else:
-            self.flush_after = DEFAULT_FLUSH_AFTER
-        LOG.info("Flush will occur if %d messages are waiting to be "
-                 "delivered" % self.flush_after)
-
-        if 'msg_waiting_max' in args:
-            self.msg_waiting_max = int(args['msg_waiting_max'])
-        else:
-            self.msg_waiting_max = DEFAULT_MAX_MSG_WAITING
-        LOG.info("Maximum number of messages and Kafka protocol requests "
-                 "that can be waiting to be delivered to broker: %d"
-                 % self.msg_waiting_max)
+            self.verbose = ast.literal_eval(args['verbose'])
+        if not self.verbose:
+            LOG.info("Verbose mode is OFF: you will not be able to see "
+                     "messages in here. Use 'verbose=('True')' in your "
+                     "destination options.")
 
         return True
 
@@ -131,14 +128,13 @@ class KafkaDestination(object):
         if self._kafka_producer is not None:
             LOG.debug("Flushing producer with a timeout of 30 seconds....")
             self._kafka_producer.flush(30)
+            self._kafka_producer = None
         return True
 
     def deinit(self):
         """ This method is called at deinitialization time.
         """
         LOG.debug("KafkaDestination.deinit()....")
-        if self._kafka_producer is not None:
-            self._kafka_producer = None
         return True
 
     def send(self, msg):
@@ -171,38 +167,40 @@ class KafkaDestination(object):
         msg_string = str(msg)
 
         try:
-            if len(self._kafka_producer) >= self.msg_waiting_max:
-                LOG.error(
-                    "Maximum number of messages of %s and Kafka protocol "
-                    "requests waiting to be delivered to broker reached. "
-                    "Message will be dropped."
-                    % DEFAULT_MAX_MSG_WAITING)
-            else:
-                kwargs = {'callback': self._acked}
-                if self.key:
-                    if msg.get(self.key):
-                        kwargs['key'] = msg.get(self.key)
-                if self.partition:
-                    try:
-                        kwargs['partition'] = int(self.partition)
-                    except ValueError:
-                        LOG.warning(
-                            "Ignore partition=%s because it is not an int."
-                            % self.partition)
-                self._kafka_producer.produce(self.topic, msg_string, **kwargs)
-        except Exception as e:
-            LOG.error(e, exc_info=True)
-            return False
+            kwargs = {'callback': self._acked}
+            if self.msg_key:
+                if msg.get(self.msg_key):
+                    kwargs['key'] = msg.get(self.msg_key)
+            if self.partition:
+                try:
+                    kwargs['partition'] = int(self.partition)
+                except ValueError:
+                    LOG.warning(
+                        "Ignore partition=%s because it is not an int."
+                        % self.partition)
+            self._kafka_producer.produce(self.topic, msg_string, **kwargs)
+        except BufferError:
+            LOG.error("Producer queue is full. This message will be discarded. "
+                      "%d messages waiting to be delivered.",
+                      len(self._kafka_producer))
+            try:
+                sleep(5)
+            except KeyboardInterrupt:
+                return False
+            return True
+        except KafkaException as e:
+            LOG.error("An error occurred while trying to send messages..."
+                      "See details: %s" % e, exc_info=True)
+            # do not return False here as the destination would be closed
+            # and we would have to restart syslog-ng
+            try:
+                sleep(5)
+            except KeyboardInterrupt:
+                return False
+            return True
         finally:
-            queued = len(self._kafka_producer)
-            if queued >= self.flush_after:
-                LOG.info(
-                    "Flushing message per configuration. "
-                    "After=%d messages." % self.flush_after)
-                queued_after = self._kafka_producer.flush(10)
-                if queued_after == queued:
-                    LOG.warning("We having issues flushing the producer. "
-                                "Is Kafka available?")
+            self._kafka_producer.poll(0)
+
         return True
 
     def _acked(self, err, msg):
