@@ -3,7 +3,7 @@ import confluent_kafka
 
 # Producer is a native C object. We cannot use unittest.mock to set attributes.
 class MockProducer(confluent_kafka.Producer):
-    def flush(self):
+    def flush(self, timeout=0):
         return super(MockProducer, self).flush()
 
     def produce(self, topic, msg, callback=None):

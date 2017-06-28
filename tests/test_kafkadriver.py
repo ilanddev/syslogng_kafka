@@ -8,6 +8,7 @@ test_syslogng_kafka
 Tests for `syslogng_kafka` module.
 """
 
+import ast
 import sys
 import unittest
 
@@ -18,8 +19,6 @@ from mock import ANY
 # noinspection PyUnresolvedReferences
 import monkey  # NOQA
 from syslogng_kafka.kafkadriver import DEFAULT_BROKER_VERSION_FALLBACK
-from syslogng_kafka.kafkadriver import DEFAULT_FLUSH_AFTER
-from syslogng_kafka.kafkadriver import DEFAULT_MAX_MSG_WAITING
 from syslogng_kafka.kafkadriver import KafkaDestination
 from syslogng_kafka.log import LOG
 
@@ -40,13 +39,66 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, None)
         self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
         self.assertEquals(dest.verbose, False)
-        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest.msg_waiting_max, DEFAULT_MAX_MSG_WAITING)
         self.assertEquals(
             dest._conf,
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK})
+
+    def test_z_producer_config(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'producer_config': "{'x': 'y'}"}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, None)
+        self.assertEquals(dest.group_id, None)
+        self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.producer_config,
+                          ast.literal_eval(conf['producer_config']))
+        # true only if a subset of dest_.conf
+        self.assertTrue(
+            ast.literal_eval(conf['producer_config']) <= dest._conf)
+        self.assertTrue(
+            {'api.version.request': False, 'bootstrap.servers': conf['hosts'],
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK}
+            <= dest._conf)
+
+    def test_zz_producer_config(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'producer_config': "{'x': 'y', 'a': 'b'}"}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, None)
+        self.assertEquals(dest.group_id, None)
+        self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.producer_config,
+                          ast.literal_eval(conf['producer_config']))
+        # true only if a subset of dest_.conf
+        self.assertTrue(
+            ast.literal_eval(conf['producer_config']) <= dest._conf)
+        self.assertTrue(
+            {'api.version.request': False, 'bootstrap.servers': conf['hosts'],
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK}
+            <= dest._conf)
+
+    def test_zzz_producer_config(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'producer_config': "WRONG"}
+        self.assertTrue(dest.init(conf))
+        self.assertEquals(dest.hosts, conf['hosts'])
+        self.assertEquals(dest.topic, conf['topic'])
+        self.assertEquals(dest.programs, None)
+        self.assertEquals(dest.group_id, None)
+        self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
+        self.assertEquals(dest.verbose, False)
+        self.assertIsNone(dest.producer_config)
 
     def test_init_config_program(self):
         # single program to filter against
@@ -60,8 +112,6 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, None)
         self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
         self.assertEquals(dest.verbose, False)
-        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest.msg_waiting_max, DEFAULT_MAX_MSG_WAITING)
         self.assertEquals(
             dest._conf,
             {'api.version.request': False,
@@ -79,8 +129,6 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, None)
         self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
         self.assertEquals(dest.verbose, False)
-        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest.msg_waiting_max, DEFAULT_MAX_MSG_WAITING)
         self.assertEquals(
             dest._conf,
             {'api.version.request': False,
@@ -98,8 +146,6 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, None)
         self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
         self.assertEquals(dest.verbose, False)
-        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest.msg_waiting_max, DEFAULT_MAX_MSG_WAITING)
         self.assertEquals(
             dest._conf,
             {'api.version.request': False,
@@ -117,8 +163,6 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, conf['group_id'])
         self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
         self.assertEquals(dest.verbose, False)
-        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest.msg_waiting_max, DEFAULT_MAX_MSG_WAITING)
         self.assertEquals(
             dest._conf,
             {'api.version.request': False,
@@ -138,73 +182,6 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest_msg.broker_version,
                           DEFAULT_BROKER_VERSION_FALLBACK)
         self.assertEquals(dest_msg.verbose, True)
-        self.assertEquals(dest_msg.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest_msg.msg_waiting_max, DEFAULT_MAX_MSG_WAITING)
-
-    def test_init_flush_after_config(self):
-        dest_msg = KafkaDestination()
-        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
-                'flush_after': "10"}
-        self.assertTrue(dest_msg.init(conf))
-        self.assertEquals(dest_msg.hosts, conf['hosts'])
-        self.assertEquals(dest_msg.topic, conf['topic'])
-        self.assertEquals(dest_msg.programs, None)
-        self.assertEquals(dest_msg.group_id, None)
-        self.assertEquals(dest_msg.broker_version,
-                          DEFAULT_BROKER_VERSION_FALLBACK)
-        self.assertEquals(dest_msg.verbose, False)
-        self.assertEquals(dest_msg.flush_after, 10)
-        self.assertEquals(dest_msg.msg_waiting_max, DEFAULT_MAX_MSG_WAITING)
-
-    def test_init_msg_waiting_max_config_01(self):
-        dest_msg = KafkaDestination()
-        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
-                'msg_waiting_max': "100"}
-        self.assertTrue(dest_msg.init(conf))
-        self.assertEquals(dest_msg.hosts, conf['hosts'])
-        self.assertEquals(dest_msg.topic, conf['topic'])
-        self.assertEquals(dest_msg.programs, None)
-        self.assertEquals(dest_msg.group_id, None)
-        self.assertEquals(dest_msg.broker_version,
-                          DEFAULT_BROKER_VERSION_FALLBACK)
-        self.assertEquals(dest_msg.verbose, False)
-        self.assertEquals(dest_msg.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest_msg.msg_waiting_max, 100)
-
-    def test_init_msg_waiting_max_config_02(self):
-        dest_msg = KafkaDestination()
-        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
-                'msg_waiting_max': "0"}
-        self.assertTrue(dest_msg.init(conf))
-        self.assertEquals(dest_msg.hosts, conf['hosts'])
-        self.assertEquals(dest_msg.topic, conf['topic'])
-        self.assertEquals(dest_msg.programs, None)
-        self.assertEquals(dest_msg.group_id, None)
-        self.assertEquals(dest_msg.broker_version,
-                          DEFAULT_BROKER_VERSION_FALLBACK)
-        self.assertEquals(dest_msg.verbose, False)
-        self.assertEquals(dest_msg.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest_msg.msg_waiting_max, 0)
-
-        self.assertTrue(dest_msg.init(conf))
-        self.assertTrue(dest_msg.open())
-
-        dest_msg._kafka_producer.flush = MagicMock(name='flush')
-        dest_msg._kafka_producer.produce = MagicMock(name='produce')
-
-        LOG.error = MagicMock(name='error')
-
-        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
-               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
-               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
-               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
-               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
-               'id': u'13254', 'dest_ip': u'209.143.151.70'}
-        dest_msg.send(msg)
-
-        dest_msg._kafka_producer.produce.assert_not_called()
-        dest_msg._kafka_producer.flush.assert_not_called()
-        LOG.error.assert_called_once()
 
     def test_init_broker_version_config_2(self):
         dest = KafkaDestination()
@@ -217,8 +194,6 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, None)
         self.assertEquals(dest.broker_version, conf['broker_version'])
         self.assertEquals(dest.verbose, False)
-        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest.msg_waiting_max, DEFAULT_MAX_MSG_WAITING)
 
         self.assertEquals(dest._conf['broker.version.fallback'],
                           conf['broker_version'])
@@ -234,7 +209,6 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, None)
         self.assertEquals(dest.broker_version, conf['broker_version'])
         self.assertEquals(dest.verbose, False)
-        self.assertEquals(dest.flush_after, DEFAULT_FLUSH_AFTER)
 
         self.assertEquals(dest._conf['broker.version.fallback'],
                           conf['broker_version'])
@@ -251,8 +225,6 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest_10.group_id, None)
         self.assertEquals(dest_10.broker_version, conf_10['broker_version'])
         self.assertEquals(dest_10.verbose, False)
-        self.assertEquals(dest_10.flush_after, DEFAULT_FLUSH_AFTER)
-        self.assertEquals(dest_10.msg_waiting_max, DEFAULT_MAX_MSG_WAITING)
 
         self.assertFalse('broker.version.fallback' in dest_10._conf.keys())
         self.assertEquals(dest_10._conf['api.version.request'], True)
@@ -275,10 +247,7 @@ class TestKafkaDestination(unittest.TestCase):
         conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
         dest.init(conf)
         dest.open()
-
-        dest._kafka_producer.flush = MagicMock(name='flush')
         self.assertTrue(dest.close())
-        dest._kafka_producer.flush.assert_called_once()
 
     def test_init_open_deinit(self):
         dest = KafkaDestination()
@@ -348,7 +317,8 @@ class TestKafkaDestination(unittest.TestCase):
 
     def test_send_message_key(self):
         dest = KafkaDestination()
-        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic', 'key': 'src_ip'}
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'msg_key': 'src_ip'}
         self.assertTrue(dest.init(conf))
         self.assertTrue(dest.open())
 
@@ -368,7 +338,7 @@ class TestKafkaDestination(unittest.TestCase):
 
     def test_send_message_bad_key(self):
         dest = KafkaDestination()
-        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic', 'key': 'nope'}
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic', 'msg_key': 'nope'}
         self.assertTrue(dest.init(conf))
         self.assertTrue(dest.open())
 
@@ -458,40 +428,6 @@ class TestKafkaDestination(unittest.TestCase):
 
         dest._kafka_producer.flush.assert_not_called()
 
-    def test_send_message_flush(self):
-        log_dest = KafkaDestination()
-        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
-                'flush_after': "0"}
-        self.assertTrue(log_dest.init(conf))
-        self.assertTrue(log_dest.open())
-
-        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
-               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
-               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
-               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
-               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
-               'id': u'13254', 'dest_ip': u'209.143.151.70'}
-
-        log_dest._kafka_producer.produce = MagicMock(name='produce')
-        LOG.info = MagicMock(name='info')
-        LOG.warning = MagicMock(name='warning')
-
-        def flush(self):
-            return 10
-
-        log_dest._kafka_producer.flush = flush
-
-        def __len__(self):
-            return 10
-
-        monkey.MockProducer.__len__ = __len__
-
-        log_dest.send(msg)
-
-        log_dest._kafka_producer.produce.assert_called_once()
-        LOG.info.assert_called_once()
-        LOG.warning.assert_called_once()
-
     def test_produce_fails_KafkaException(self):
         dest = KafkaDestination()
         conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
@@ -514,7 +450,8 @@ class TestKafkaDestination(unittest.TestCase):
 
         dest._kafka_producer.produce = produce
 
-        self.assertFalse(dest.send(msg))
+        # even if it fails
+        self.assertTrue(dest.send(msg))
 
         dest._kafka_producer.flush.assert_not_called()
         dest._kafka_producer._acked.assert_not_called()
