@@ -482,15 +482,20 @@ class TestKafkaDestination(unittest.TestCase):
         LOG.debug.assert_not_called()
 
         dest._acked(FakeError("XXX"), FakeMessage("XXX"))
-        LOG.error.assert_called_once()
+        LOG.error.assert_not_called()
         LOG.debug.assert_not_called()
 
         dest._acked(None, FakeMessage("XXX"))
-        LOG.error.assert_called_once()
+        LOG.error.assert_not_called()
         LOG.debug.assert_not_called()
 
         dest.verbose = True
+
         dest._acked(None, FakeMessage("XXX"))
+        LOG.error.assert_not_called()
+        LOG.debug.assert_called_once()
+
+        dest._acked(FakeError("XXX"), FakeMessage("XXX"))
         LOG.error.assert_called_once()
         LOG.debug.assert_called_once()
 
