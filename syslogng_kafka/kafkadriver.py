@@ -13,7 +13,9 @@ from .util import parse_str_list
 # this is the default broker version fallback defined by `librdkafka`
 DEFAULT_BROKER_VERSION_FALLBACK = '0.9.0.1'
 
-DEFAULT_FLUSH_AFTER = 100000
+DEFAULT_FLUSH_AFTER = 10000
+
+DEFAULT_MAX_MSG_WAITING = 1000000
 
 
 class KafkaDestination(object):
@@ -32,6 +34,7 @@ class KafkaDestination(object):
         self.broker_version = None
         self.verbose = False
         self.flush_after = None
+        self.msg_waiting_max = None
 
     def init(self, args):
         """ This method is called at initialization time.
@@ -79,6 +82,14 @@ class KafkaDestination(object):
             self.flush_after = DEFAULT_FLUSH_AFTER
         LOG.info("Flush will occur if %d messages are waiting to be "
                  "delivered" % self.flush_after)
+
+        if 'msg_waiting_max' in args:
+            self.msg_waiting_max = int(args['msg_waiting_max'])
+        else:
+            self.msg_waiting_max = DEFAULT_MAX_MSG_WAITING
+        LOG.info("Maximum number of messages and Kafka protocol requests "
+                 "that can be waiting to be delivered to broker: %d"
+                 % self.msg_waiting_max)
 
         return True
 
@@ -145,8 +156,15 @@ class KafkaDestination(object):
         msg_string = str(msg)
 
         try:
-            self._kafka_producer.produce(
-                self.topic, msg_string, callback=self._acked)
+            if len(self._kafka_producer) >= self.msg_waiting_max:
+                LOG.error(
+                    "Maximum number of messages of %s and Kafka protocol "
+                    "requests waiting to be delivered to broker reached. "
+                    "Message will be dropped."
+                    % DEFAULT_MAX_MSG_WAITING)
+            else:
+                self._kafka_producer.produce(
+                    self.topic, msg_string, callback=self._acked)
         except Exception as e:
             LOG.error(e, exc_info=True)
             return False
