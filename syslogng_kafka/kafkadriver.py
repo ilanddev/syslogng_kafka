@@ -204,9 +204,9 @@ class KafkaDestination(object):
         return True
 
     def _acked(self, err, msg):
-        if err is not None:
-            LOG.error("Failed to deliver message: {0}: {1}"
-                      .format(msg.value(), err.str()))
-        else:
-            if self.verbose:
+        if self.verbose:
+            if err is not None:
+                LOG.error("Failed to deliver message: {0}: {1}"
+                          .format(msg.value(), err.str()))
+            else:
                 LOG.debug("Message produced: {0}".format(msg.value()))
