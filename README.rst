@@ -157,6 +157,7 @@ before forwarding to Kafka::
                     broker_version("0.8.2.1")
                     verbose("True")
                     flush_after("10000")
+                    msg_waiting_max("1000000")
                     )
                 value-pairs(scope(rfc5424))
         );
