@@ -13,6 +13,7 @@ import unittest
 
 from confluent_kafka import KafkaException
 from mock import MagicMock
+from mock import ANY
 
 # noinspection PyUnresolvedReferences
 import monkey  # NOQA
@@ -269,22 +270,22 @@ class TestKafkaDestination(unittest.TestCase):
         dest.open()
         self.assertTrue(dest.is_opened())
 
-    def test_init_open_deinit(self):
+    def test_init_open_close(self):
         dest = KafkaDestination()
         conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
         dest.init(conf)
         dest.open()
 
         dest._kafka_producer.flush = MagicMock(name='flush')
-        self.assertTrue(dest.deinit())
+        self.assertTrue(dest.close())
         dest._kafka_producer.flush.assert_called_once()
 
-    def test_init_open_close(self):
+    def test_init_open_deinit(self):
         dest = KafkaDestination()
         conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
         self.assertTrue(dest.init(conf))
         self.assertTrue(dest.open())
-        self.assertTrue(dest.close())
+        self.assertTrue(dest.deinit())
 
     def test_send_empty_message(self):
         dest = KafkaDestination()
@@ -345,6 +346,88 @@ class TestKafkaDestination(unittest.TestCase):
         dest._kafka_producer.produce.assert_not_called()
         dest._kafka_producer.flush.assert_not_called()
 
+    def test_send_message_key(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic', 'key': 'src_ip'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70'}
+
+        dest._kafka_producer.produce = MagicMock(name='produce')
+
+        dest.send(msg)
+
+        dest._kafka_producer.produce.assert_called_once_with(
+            conf['topic'], ANY, callback=ANY, key=u'10.11.12.53')
+
+    def test_send_message_bad_key(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic', 'key': 'nope'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70'}
+
+        dest._kafka_producer.produce = MagicMock(name='produce')
+
+        dest.send(msg)
+
+        dest._kafka_producer.produce.assert_called_once_with(
+            conf['topic'], ANY, callback=ANY)
+
+    def test_send_message_partition(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic', 'partition': '10'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70'}
+
+        dest._kafka_producer.produce = MagicMock(name='produce')
+
+        dest.send(msg)
+
+        dest._kafka_producer.produce.assert_called_once_with(
+            conf['topic'], ANY, callback=ANY, partition=int(conf['partition']))
+
+    def test_send_message_partition_bad(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic', 'partition': 'XXX'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53', 'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70'}
+
+        dest._kafka_producer.produce = MagicMock(name='produce')
+        LOG.warning = MagicMock(name='warning')
+
+        dest.send(msg)
+
+        LOG.warning.assert_called_once()
+        dest._kafka_producer.produce.assert_called_once_with(
+            conf['topic'], ANY, callback=ANY)
+
     def test_send_filter_message_firewall(self):
         dest = KafkaDestination()
         conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
@@ -395,10 +478,12 @@ class TestKafkaDestination(unittest.TestCase):
 
         def flush(self):
             return 10
+
         log_dest._kafka_producer.flush = flush
 
         def __len__(self):
             return 10
+
         monkey.MockProducer.__len__ = __len__
 
         log_dest.send(msg)
@@ -436,9 +521,7 @@ class TestKafkaDestination(unittest.TestCase):
         LOG.error.assert_called_once()
 
     def test_consumer_acked(self):
-
         class FakeMessage:
-
             def __init__(self, value):
                 self._value = value
 
@@ -446,7 +529,6 @@ class TestKafkaDestination(unittest.TestCase):
                 return self._value
 
         class FakeError:
-
             def __init__(self, msg):
                 self._msg = msg
 
