@@ -153,6 +153,8 @@ before forwarding to Kafka::
                 options(
                     hosts("localhost:9092,localhost:9182")
                     topic("syslog")
+                    partition("10")
+                    key("src_ip")
                     programs("firewall,nat")
                     broker_version("0.8.2.1")
                     verbose("True")

@@ -29,6 +29,8 @@ class KafkaDestination(object):
     def __init__(self):
         self.hosts = None
         self.topic = None
+        self.key = None
+        self.partition = None
         self.programs = None
         self.group_id = None
         self.broker_version = None
@@ -51,14 +53,24 @@ class KafkaDestination(object):
             LOG.error("Missing `hosts` or `topic` option...")
             return False
 
+        if 'key' in args:
+            self.key = args['key']
+            LOG.info("Message key used will be %s" % self.key)
+
+        if 'partition' in args:
+            self.partition = args['partition']
+            LOG.info("Partition to produce to %s" % self.partition)
+
         # optional `programs` parameter to filter out messages
         if 'programs' in args:
             self.programs = parse_str_list(args['programs'])
             LOG.info("Programs to filter against %s" % self.programs)
+
         if 'group_id' in args:
             self.group_id = args['group_id']
             self._conf['group.id'] = self.group_id
             LOG.info("Broker group_id=%s" % self.group_id)
+
         if 'broker_version' in args:
             self.broker_version = args['broker_version']
             if '.'.join(self.broker_version.split('.')[:2]) == '0.10':
@@ -74,8 +86,10 @@ class KafkaDestination(object):
             self._conf['api.version.request'] = False
             LOG.warn("Default broker version fallback %s "
                      "will be applied here." % DEFAULT_BROKER_VERSION_FALLBACK)
+
         if 'verbose' in args:
             self.verbose = bool(args['verbose'])
+
         if 'flush_after' in args:
             self.flush_after = int(args['flush_after'])
         else:
@@ -98,7 +112,8 @@ class KafkaDestination(object):
 
         Should return False if initialization fails.
         """
-        LOG.info("Opening connection to the remote Kafka services.")
+        LOG.info("Opening connection to the remote Kafka services at %s"
+                 % self.hosts)
         self._kafka_producer = Producer(**self._conf)
         return True
 
@@ -113,9 +128,9 @@ class KafkaDestination(object):
         """ Close the connection to the Kafka service.
         """
         LOG.debug("KafkaDestination.close()....")
-        # no `close()` method on Consumer API
         if self._kafka_producer is not None:
-            self._kafka_producer = None
+            LOG.debug("Flushing producer with a timeout of 30 seconds....")
+            self._kafka_producer.flush(30)
         return True
 
     def deinit(self):
@@ -123,7 +138,7 @@ class KafkaDestination(object):
         """
         LOG.debug("KafkaDestination.deinit()....")
         if self._kafka_producer is not None:
-            self._kafka_producer.flush(30)
+            self._kafka_producer = None
         return True
 
     def send(self, msg):
@@ -163,8 +178,18 @@ class KafkaDestination(object):
                     "Message will be dropped."
                     % DEFAULT_MAX_MSG_WAITING)
             else:
-                self._kafka_producer.produce(
-                    self.topic, msg_string, callback=self._acked)
+                kwargs = {'callback': self._acked}
+                if self.key:
+                    if msg.get(self.key):
+                        kwargs['key'] = msg.get(self.key)
+                if self.partition:
+                    try:
+                        kwargs['partition'] = int(self.partition)
+                    except ValueError:
+                        LOG.warning(
+                            "Ignore partition=%s because it is not an int."
+                            % self.partition)
+                self._kafka_producer.produce(self.topic, msg_string, **kwargs)
         except Exception as e:
             LOG.error(e, exc_info=True)
             return False
