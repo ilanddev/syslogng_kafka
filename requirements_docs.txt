@@ -1,1 +1,2 @@
 syslog-rfc5424-formatter>=1.0.0
+# exclude `confluent-kafka` because of C extensions. See `docs/conf.py`
