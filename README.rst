@@ -27,7 +27,7 @@ to filter and forward syslog messages to `Apache Kafka`_ brokers.
 The implementation leverages `confluent-kafka`_ which uses the awesome `librdkafka`_
 library providing reliability and high performance.
 
-**Please read the `doc`_ as in most cases a `pip install` won't work as they are particular requirements that are currently not met by mainstream Linux distribution.**
+**Please read the** `doc`_ **as in most cases a `pip install` won't work as they are particular requirements that are currently not met by mainstream Linux distribution.**
 
 .. _Python: https://www.python.org/
 .. _syslog-ng: https://github.com/balabit/syslog-ng
