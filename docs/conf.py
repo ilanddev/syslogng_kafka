@@ -16,6 +16,17 @@
 import sys
 import os
 
+import sys
+from mock import MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = ['confluent-kafka']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 # If extensions (or modules to document with autodoc) are in another
 # directory, add these directories to sys.path here. If the directory is
 # relative to the documentation root, use os.path.abspath to make it
@@ -56,7 +67,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'syslog-ng Kafka driver'
-copyright = u"2016, Julien Anguenot"
+copyright = u"2017, iland Internet Solutions, Corp"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -209,7 +220,7 @@ latex_elements = {
 # [howto/manual]).
 latex_documents = [
     ('index', 'syslogng_kafka.tex',
-     u'syslog-ng Kafka driver Documentation',
+     u'syslog-ng Apache Kafka destination',
      u'Julien Anguenot', 'manual'),
 ]
 
@@ -240,7 +251,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'syslogng_kafka',
-     u'syslog-ng Kafka driver Documentation',
+     u'ssyslog-ng Apache Kafka destination',
      [u'Julien Anguenot'], 1)
 ]
 
@@ -255,7 +266,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     ('index', 'syslogng_kafka',
-     u'syslog-ng Kafka driver Documentation',
+     u'syslog-ng Apache Kafka destination',
      u'Julien Anguenot',
      'syslogng_kafka',
      'One line description of project.',

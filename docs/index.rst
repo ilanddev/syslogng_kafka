@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to syslog-ng Kafka driver's documentation!
-==================================================
+Welcome to syslog-ng Apache Kafka destination documentation!
+============================================================
 
 Contents:
 
@@ -12,9 +12,12 @@ Contents:
    :maxdepth: 2
 
    readme
+   installation_librdkafka
+   installation_syslogng
    installation
    modules
    contributing
+   releasing
    history
    authors
 
