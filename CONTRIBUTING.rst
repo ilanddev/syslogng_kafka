@@ -38,8 +38,8 @@ is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-iland-sdk could always use more documentation, whether as part of the
-official iland-sdk docs, in docstrings, or even on the web in blog posts,
+syslogng_kafka could always use more documentation, whether as part of the
+official syslogng_kafka docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Submit Feedback
