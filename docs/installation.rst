@@ -102,6 +102,18 @@ Sample driver configuration with every possible options. See below for documenta
         destination(syslog_to_kafka);
     };
 
+The available options are:
+
+    - *hosts*: Kafka `bootstrap.servers`. One or multiple coma separated
+    - *topic*:  Topic to produce message to
+    - *partition* (optional): Partition to produce to, elses uses the configured partitioner.
+    - *msg_key* (optional): Message key
+    - *programs* (optional): filter messages by syslog program. One or multiple coma separeted
+    - *broker_version* (optional): default is '0.9.0.1'
+    - *verbose (optional): if wether or not to print messages in logs. False by default
+    - *producer_config* (optional): The supported configuration values are dictated by the underlying librdkafka C library. For the full range of configuration properties please consult librdkafka’s documentation: https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
+
+
 Restart the syslog-ng service:
 
 .. code-block:: console

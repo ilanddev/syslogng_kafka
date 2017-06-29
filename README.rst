@@ -14,8 +14,8 @@
     :target: https://requires.io/github/ilanddev/syslogng_kafka/requirements/?branch=master
     :alt: Requirements Status
 
-* Free software: Apache Software License 2.0
-* Documentation: https://syslogng-kafka.readthedocs.io.
+- Free software: Apache Software License 2.0
+- Documentation: https://syslogng-kafka.readthedocs.io.
 
 ============
 Introduction

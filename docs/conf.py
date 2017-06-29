@@ -66,7 +66,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'syslog-ng Kafka driver'
+project = u'syslog-ng Kafka destination'
 copyright = u"2017, iland Internet Solutions, Corp"
 
 # The version info for the project you're documenting, acts as replacement
