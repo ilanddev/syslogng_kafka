@@ -6,8 +6,8 @@
 import ast
 from time import sleep
 
-from confluent_kafka import Producer
 from confluent_kafka import KafkaException
+from confluent_kafka import Producer
 
 from .log import LOG
 from .util import date_str_to_timestamp
@@ -126,15 +126,17 @@ class KafkaDestination(object):
         """
         LOG.debug("KafkaDestination.close()....")
         if self._kafka_producer is not None:
-            LOG.debug("Flushing producer with a timeout of 30 seconds....")
-            self._kafka_producer.flush(30)
-            self._kafka_producer = None
+            LOG.debug("Flushing producer....")
+            self._kafka_producer.flush(5)
         return True
 
+    # noinspection PyMethodMayBeStatic
     def deinit(self):
         """ This method is called at deinitialization time.
         """
         LOG.debug("KafkaDestination.deinit()....")
+        if self._kafka_producer:
+            self._kafka_producer = None
         return True
 
     def send(self, msg):
@@ -179,27 +181,22 @@ class KafkaDestination(object):
                         "Ignore partition=%s because it is not an int."
                         % self.partition)
             self._kafka_producer.produce(self.topic, msg_string, **kwargs)
+            self._kafka_producer.poll(0)
         except BufferError:
             LOG.error("Producer queue is full. This message will be discarded. "
                       "%d messages waiting to be delivered.",
                       len(self._kafka_producer))
-            try:
-                sleep(5)
-            except KeyboardInterrupt:
-                return False
-            return True
-        except KafkaException as e:
-            LOG.error("An error occurred while trying to send messages..."
-                      "See details: %s" % e, exc_info=True)
             # do not return False here as the destination would be closed
             # and we would have to restart syslog-ng
-            try:
-                sleep(5)
-            except KeyboardInterrupt:
-                return False
+            sleep(5)
             return True
-        finally:
-            self._kafka_producer.poll(0)
+        except (KafkaException, UnicodeDecodeError) as e:
+            LOG.error("An error occurred while trying to send messages...   "
+                      "See details: %s" % e, exc_info=True)
+            sleep(5)
+            # do not return False here as the destination would be closed
+            # and we would have to restart syslog-ng
+            return True
 
         return True
 
