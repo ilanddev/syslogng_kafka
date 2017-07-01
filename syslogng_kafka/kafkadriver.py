@@ -190,7 +190,7 @@ class KafkaDestination(object):
             # and we would have to restart syslog-ng
             sleep(5)
             return True
-        except (KafkaException, UnicodeDecodeError) as e:
+        except KafkaException as e:
             LOG.error("An error occurred while trying to send messages...   "
                       "See details: %s" % e, exc_info=True)
             sleep(5)
@@ -201,9 +201,14 @@ class KafkaDestination(object):
         return True
 
     def _acked(self, err, msg):
-        if self.verbose:
-            if err is not None:
+        if not self.verbose:
+            return
+        if err is not None:
+            try:
                 LOG.error("Failed to deliver message: {0}: {1}"
                           .format(msg.value(), err.str()))
-            else:
-                LOG.debug("Message produced: {0}".format(msg.value()))
+            except UnicodeDecodeError:
+                LOG.error("Failed to deliver message: {0}: {1}"
+                          .format(msg.value(), repr(err)))
+        else:
+            LOG.debug("Message produced: {0}".format(msg.value()))

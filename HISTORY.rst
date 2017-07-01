@@ -2,6 +2,12 @@
 History
 =======
 
+0.1.2 (2017-06-29)
+------------------
+
+* catch `UnicodeDecodeError` in delivery callback as it can be thrown by
+  `err.str()`
+
 0.1.1 (2017-06-29)
 ------------------
 
