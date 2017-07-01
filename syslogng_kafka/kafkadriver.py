@@ -190,7 +190,7 @@ class KafkaDestination(object):
             # and we would have to restart syslog-ng
             sleep(5)
             return True
-        except KafkaException as e:
+        except (KafkaException, UnicodeEncodeError) as e:
             LOG.error("An error occurred while trying to send messages...   "
                       "See details: %s" % e, exc_info=True)
             sleep(5)

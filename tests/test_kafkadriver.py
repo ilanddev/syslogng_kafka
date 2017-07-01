@@ -486,6 +486,36 @@ class TestKafkaDestination(unittest.TestCase):
         dest._kafka_producer._acked.assert_not_called()
         LOG.error.assert_called_once()
 
+    def test_produce_fails_unicodencodeerror(self):
+        dest = KafkaDestination()
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        self.assertTrue(dest.init(conf))
+        self.assertTrue(dest.open())
+
+        msg = {'FACILITY': u'user', 'PRIORITY': u'notice',
+               'HOST': u'10.11.12.102', 'PROGRAM': u'XXX',
+               'DATE': 'Jun 22 12:49:16', 'ttl': u'128', 'len': u'209',
+               'mark': u'0x1', 'src_ip': u'10.11.12.53',
+               'source_port': u'138',
+               'destination_port': u'138', 'out': u'', 'proc': u'0x00',
+               'id': u'13254', 'dest_ip': u'209.143.151.70'}
+
+        dest._kafka_producer.flush = MagicMock(name='flush')
+        dest._kafka_producer._acked = MagicMock(name='_acked')
+        LOG.error = MagicMock(name='error')
+
+        def produce(topic, msg, **kwargs):
+            raise UnicodeEncodeError("Fake exception.", u"x", 2, 3, "x")
+
+        dest._kafka_producer.produce = produce
+
+        # even if it fails
+        self.assertTrue(dest.send(msg))
+
+        dest._kafka_producer.flush.assert_not_called()
+        dest._kafka_producer._acked.assert_not_called()
+        LOG.error.assert_called_once()
+
     def test_consumer_acked(self):
         class FakeMessage:
             def __init__(self, value):
