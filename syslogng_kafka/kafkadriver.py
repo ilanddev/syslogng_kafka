@@ -152,23 +152,24 @@ class KafkaDestination(object):
         if not msg:
             return True
 
-        # check if we do have a program filter defined.
-        msg_program = msg.get('PROGRAM')
-        if self.programs is not None:
-            if msg_program not in self.programs:
-                # notify of success
-                return True
-        if msg_program == 'firewall':
-            firewall_msg = msg.get('MESSAGE')
-            msg['MESSAGE'] = parse_firewall_msg(firewall_msg)
-        # convert date string to UNIX timestamp
-        msg_date = msg.get('DATE')
-        if msg_date is not None:
-            msg['DATE'] = date_str_to_timestamp(msg_date)
-
-        msg_string = str(msg)
-
         try:
+
+            # check if we do have a program filter defined.
+            msg_program = msg.get('PROGRAM')
+            if self.programs is not None:
+                if msg_program not in self.programs:
+                    # notify of success
+                    return True
+            if msg_program == 'firewall':
+                firewall_msg = msg.get('MESSAGE')
+                msg['MESSAGE'] = parse_firewall_msg(firewall_msg)
+            # convert date string to UNIX timestamp
+            msg_date = msg.get('DATE')
+            if msg_date is not None:
+                msg['DATE'] = date_str_to_timestamp(msg_date)
+
+            msg_string = str(msg)
+
             kwargs = {'callback': self._acked}
             if self.msg_key:
                 if msg.get(self.msg_key):
