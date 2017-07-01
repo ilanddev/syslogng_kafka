@@ -17,7 +17,7 @@ with open('requirements_dev.txt') as requirements_dev_file:
 
 setup(
     name='syslogng_kafka',
-    version='0.1.3',
+    version='0.1.4',
     description="syslog-ng mod-python Kafka driver",
     long_description=readme + '\n\n' + history,
     author="Julien Anguenot",
