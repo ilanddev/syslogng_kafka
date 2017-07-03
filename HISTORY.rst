@@ -2,6 +2,12 @@
 History
 =======
 
+0.1.5 (2017-07-03)
+------------------
+
+* provide a global `on_delivery` callback in the `Producer()` config
+dict better for memory consumptions vs per message callback.
+
 0.1.4 (2017-06-30)
 ------------------
 

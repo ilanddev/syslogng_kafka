@@ -95,12 +95,20 @@ class KafkaDestination(object):
             LOG.warn("Default broker version fallback %s "
                      "will be applied here." % DEFAULT_BROKER_VERSION_FALLBACK)
 
+        # provide a global `on_delivery` callback in the `Producer()` config
+        # dict better for memory consumptions vs per message callback.
+        self._conf['on_delivery'] = self._acked
         if 'verbose' in args:
             self.verbose = ast.literal_eval(args['verbose'])
         if not self.verbose:
+            # only interested in delivery failures here. We do provide a
+            # global on_delivery callback in the Producer() config dict and
+            # also set delivery.report.only.error.
+            self._conf['delivery.report.only.error'] = True
             LOG.info("Verbose mode is OFF: you will not be able to see "
-                     "messages in here. Use 'verbose=('True')' in your "
-                     "destination options.")
+                     "messages in here. Failures only. Use 'verbose=('True')' "
+                     "in your destination options to see successfully "
+                     "processed messages in your logs.")
 
         return True
 
@@ -126,8 +134,8 @@ class KafkaDestination(object):
         """
         LOG.debug("KafkaDestination.close()....")
         if self._kafka_producer is not None:
-            LOG.debug("Flushing producer....")
-            self._kafka_producer.flush(5)
+            LOG.debug("Flushing producer w/ a timeout of 60 seconds...")
+            self._kafka_producer.flush(30)
         return True
 
     # noinspection PyMethodMayBeStatic
@@ -170,7 +178,7 @@ class KafkaDestination(object):
 
             msg_string = str(msg)
 
-            kwargs = {'callback': self._acked}
+            kwargs = {}
             if self.msg_key:
                 if msg.get(self.msg_key):
                     kwargs['key'] = msg.get(self.msg_key)
@@ -181,7 +189,13 @@ class KafkaDestination(object):
                     LOG.warning(
                         "Ignore partition=%s because it is not an int."
                         % self.partition)
+
             self._kafka_producer.produce(self.topic, msg_string, **kwargs)
+
+            # `poll()` doesn't do any sleeping at all if you give it 0, all
+            # it does is grab a mutex, check a queue, and release the mutex.
+            # It is okay to call poll(0) after each produce call, the
+            # performance impact is negligible, if any.
             self._kafka_producer.poll(0)
         except BufferError:
             LOG.error("Producer queue is full. This message will be discarded. "
@@ -202,8 +216,6 @@ class KafkaDestination(object):
         return True
 
     def _acked(self, err, msg):
-        if not self.verbose:
-            return
         if err is not None:
             try:
                 LOG.error("Failed to deliver message: {0}: {1}"
@@ -212,4 +224,5 @@ class KafkaDestination(object):
                 LOG.error("Failed to deliver message: {0}: {1}"
                           .format(msg.value(), repr(err)))
         else:
-            LOG.debug("Message produced: {0}".format(msg.value()))
+            if self.verbose:
+                LOG.debug("Message produced: {0}".format(msg.value()))

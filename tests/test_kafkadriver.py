@@ -43,7 +43,9 @@ class TestKafkaDestination(unittest.TestCase):
             dest._conf,
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
-             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK})
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
+             'delivery.report.only.error': True,
+             'on_delivery': dest._acked})
 
     def test_z_producer_config(self):
         dest = KafkaDestination()
@@ -116,7 +118,9 @@ class TestKafkaDestination(unittest.TestCase):
             dest._conf,
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
-             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK})
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
+             'delivery.report.only.error': True,
+             'on_delivery': dest._acked})
 
         # multiple programs
         dest = KafkaDestination()
@@ -133,7 +137,9 @@ class TestKafkaDestination(unittest.TestCase):
             dest._conf,
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
-             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK})
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
+             'delivery.report.only.error': True,
+             'on_delivery': dest._acked})
 
         # multiple programs with space after coma.
         dest = KafkaDestination()
@@ -150,7 +156,9 @@ class TestKafkaDestination(unittest.TestCase):
             dest._conf,
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
-             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK})
+             'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
+             'delivery.report.only.error': True,
+             'on_delivery': dest._acked})
 
     def test_init_group_config(self):
         dest = KafkaDestination()
@@ -168,7 +176,9 @@ class TestKafkaDestination(unittest.TestCase):
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
-             'group.id': conf['group_id']})
+             'delivery.report.only.error': True,
+             'group.id': conf['group_id'],
+             'on_delivery': dest._acked})
 
     def test_init_verbose_config(self):
         dest_msg = KafkaDestination()
@@ -334,7 +344,7 @@ class TestKafkaDestination(unittest.TestCase):
         dest.send(msg)
 
         dest._kafka_producer.produce.assert_called_once_with(
-            conf['topic'], ANY, callback=ANY, key=u'10.11.12.53')
+            conf['topic'], ANY, key=u'10.11.12.53')
 
     def test_send_message_bad_key(self):
         dest = KafkaDestination()
@@ -354,7 +364,7 @@ class TestKafkaDestination(unittest.TestCase):
         dest.send(msg)
 
         dest._kafka_producer.produce.assert_called_once_with(
-            conf['topic'], ANY, callback=ANY)
+            conf['topic'], ANY)
 
     def test_send_message_partition(self):
         dest = KafkaDestination()
@@ -374,7 +384,7 @@ class TestKafkaDestination(unittest.TestCase):
         dest.send(msg)
 
         dest._kafka_producer.produce.assert_called_once_with(
-            conf['topic'], ANY, callback=ANY, partition=int(conf['partition']))
+            conf['topic'], ANY, partition=int(conf['partition']))
 
     def test_send_message_partition_bad(self):
         dest = KafkaDestination()
@@ -395,8 +405,7 @@ class TestKafkaDestination(unittest.TestCase):
         dest.send(msg)
 
         LOG.warning.assert_called_once()
-        dest._kafka_producer.produce.assert_called_once_with(
-            conf['topic'], ANY, callback=ANY)
+        dest._kafka_producer.produce.assert_called_once_with(conf['topic'], ANY)
 
     def test_send_filter_message_firewall(self):
         dest = KafkaDestination()
@@ -540,23 +549,38 @@ class TestKafkaDestination(unittest.TestCase):
         LOG.error.assert_not_called()
         LOG.debug.assert_not_called()
 
-        dest._acked(FakeError("XXX"), FakeMessage("XXX"))
-        LOG.error.assert_not_called()
-        LOG.debug.assert_not_called()
-
-        dest._acked(None, FakeMessage("XXX"))
-        LOG.error.assert_not_called()
-        LOG.debug.assert_not_called()
-
-        dest.verbose = True
-
-        dest._acked(None, FakeMessage("XXX"))
-        LOG.error.assert_not_called()
-        LOG.debug.assert_called_once()
+        LOG.error = MagicMock(name='error')
+        LOG.debug = MagicMock(name='debug')
 
         dest._acked(FakeError("XXX"), FakeMessage("XXX"))
         LOG.error.assert_called_once()
+        LOG.debug.assert_not_called()
+
+        LOG.error = MagicMock(name='error')
+        LOG.debug = MagicMock(name='debug')
+
+        dest._acked(None, FakeMessage("XXX"))
+        LOG.error.assert_not_called()
+        LOG.debug.assert_not_called()
+
+        LOG.error = MagicMock(name='error')
+        LOG.debug = MagicMock(name='debug')
+
+        dest.verbose = True
+
+        LOG.error = MagicMock(name='error')
+        LOG.debug = MagicMock(name='debug')
+
+        dest._acked(None, FakeMessage("XXX"))
+        LOG.error.assert_not_called()
         LOG.debug.assert_called_once()
+
+        LOG.error = MagicMock(name='error')
+        LOG.debug = MagicMock(name='debug')
+
+        dest._acked(FakeError("XXX"), FakeMessage("XXX"))
+        LOG.error.assert_called_once()
+        LOG.debug.assert_not_called()
 
 
 if __name__ == '__main__':
