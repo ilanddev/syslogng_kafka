@@ -134,7 +134,7 @@ class KafkaDestination(object):
         """
         LOG.debug("KafkaDestination.close()....")
         if self._kafka_producer is not None:
-            LOG.debug("Flushing producer w/ a timeout of 60 seconds...")
+            LOG.debug("Flushing producer w/ a timeout of 30 seconds...")
             self._kafka_producer.flush(30)
         return True
 
