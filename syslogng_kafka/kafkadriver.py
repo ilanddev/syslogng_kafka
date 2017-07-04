@@ -42,8 +42,6 @@ class KafkaDestination(object):
 
         Should return False if initialization fails.
         """
-        LOG.info(
-            "Initialization of Kafka Python driver w/ args=%s" % args)
 
         if 'producer_config' in args:
             try:
@@ -95,21 +93,26 @@ class KafkaDestination(object):
             LOG.warn("Default broker version fallback %s "
                      "will be applied here." % DEFAULT_BROKER_VERSION_FALLBACK)
 
-        # provide a global `on_delivery` callback in the `Producer()` config
-        # dict better for memory consumptions vs per message callback.
-        self._conf['on_delivery'] = self._acked
         if 'verbose' in args:
+            # provide a global `on_delivery` callback in the `Producer()` config
+            # dict better for memory consumptions vs per message callback.
+            self._conf['on_delivery'] = self._acked
             self.verbose = ast.literal_eval(args['verbose'])
         if not self.verbose:
             # only interested in delivery failures here. We do provide a
             # global on_delivery callback in the Producer() config dict and
             # also set delivery.report.only.error.
-            self._conf['delivery.report.only.error'] = True
+            # XXX not implemented in `confluent-kafka` <= 0.9.4
+            # as well as memory leaks. Let's wait for 0.11.x
+            # https://github.com/confluentinc/confluent-kafka-python/issues/84
+            # self._conf['delivery.report.only.error'] = True
             LOG.info("Verbose mode is OFF: you will not be able to see "
                      "messages in here. Failures only. Use 'verbose=('True')' "
                      "in your destination options to see successfully "
                      "processed messages in your logs.")
 
+        LOG.info(
+            "Initialization of Kafka Python driver w/ args=%s" % self._conf)
         return True
 
     def open(self):
