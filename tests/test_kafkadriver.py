@@ -44,8 +44,9 @@ class TestKafkaDestination(unittest.TestCase):
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
-             'delivery.report.only.error': True,
-             'on_delivery': dest._acked})
+             # 'delivery.report.only.error': True,
+             # 'on_delivery': dest._acked
+             })
 
     def test_z_producer_config(self):
         dest = KafkaDestination()
@@ -119,8 +120,9 @@ class TestKafkaDestination(unittest.TestCase):
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
-             'delivery.report.only.error': True,
-             'on_delivery': dest._acked})
+             # 'delivery.report.only.error': True,
+             # 'on_delivery': dest._acked
+             })
 
         # multiple programs
         dest = KafkaDestination()
@@ -138,8 +140,9 @@ class TestKafkaDestination(unittest.TestCase):
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
-             'delivery.report.only.error': True,
-             'on_delivery': dest._acked})
+             # 'delivery.report.only.error': True,
+             # 'on_delivery': dest._acked
+             })
 
         # multiple programs with space after coma.
         dest = KafkaDestination()
@@ -157,8 +160,9 @@ class TestKafkaDestination(unittest.TestCase):
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
-             'delivery.report.only.error': True,
-             'on_delivery': dest._acked})
+             # 'delivery.report.only.error': True,
+             # 'on_delivery': dest._acked
+             })
 
     def test_init_group_config(self):
         dest = KafkaDestination()
@@ -176,9 +180,10 @@ class TestKafkaDestination(unittest.TestCase):
             {'api.version.request': False,
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
-             'delivery.report.only.error': True,
+             # 'delivery.report.only.error': True,
              'group.id': conf['group_id'],
-             'on_delivery': dest._acked})
+             # 'on_delivery': dest._acked
+             })
 
     def test_init_verbose_config(self):
         dest_msg = KafkaDestination()

@@ -2,6 +2,13 @@
 History
 =======
 
+0.1.6 (2017-07-04)
+------------------
+
+* Disable `delivery.report.ony.error` on callbacks because of a bug in
+`confluent-kafka`: https://github.com/confluentinc/confluent-kafka-python/issues/84
+Let's revisit when 0.11 is released.
+
 0.1.5 (2017-07-03)
 ------------------
 
