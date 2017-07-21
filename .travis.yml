@@ -7,6 +7,7 @@ env:
   matrix:
     - LIBRDKAFKA_VERSION=v0.9.4
     - LIBRDKAFKA_VERSION=v0.9.5
+    - LIBRDKAFKA_VERSION=v0.11.0
 before_install:
   - sudo bash tools/bootstrap-librdkafka.sh ${LIBRDKAFKA_VERSION} /usr/local
   - sudo ldconfig -vvv
