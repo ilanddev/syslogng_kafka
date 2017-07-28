@@ -18,8 +18,10 @@ from mock import ANY
 
 # noinspection PyUnresolvedReferences
 import monkey  # NOQA
+import syslogng_kafka
 from syslogng_kafka.kafkadriver import DEFAULT_BROKER_VERSION_FALLBACK
 from syslogng_kafka.kafkadriver import KafkaDestination
+from syslogng_kafka.kafkadriver import delivery_callback, stats_callback
 from syslogng_kafka.log import LOG
 
 
@@ -45,7 +47,8 @@ class TestKafkaDestination(unittest.TestCase):
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
              'delivery.report.only.error': True,
-             'on_delivery': dest._acked
+             'on_delivery': delivery_callback,
+             'stats_cb': stats_callback
              })
 
     def test_z_producer_config(self):
@@ -121,7 +124,8 @@ class TestKafkaDestination(unittest.TestCase):
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
              'delivery.report.only.error': True,
-             'on_delivery': dest._acked
+             'on_delivery': delivery_callback,
+             'stats_cb': stats_callback
              })
 
         # multiple programs
@@ -141,7 +145,8 @@ class TestKafkaDestination(unittest.TestCase):
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
              'delivery.report.only.error': True,
-             'on_delivery': dest._acked
+             'on_delivery': delivery_callback,
+             'stats_cb': stats_callback
              })
 
         # multiple programs with space after coma.
@@ -161,7 +166,8 @@ class TestKafkaDestination(unittest.TestCase):
              'bootstrap.servers': conf['hosts'],
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
              'delivery.report.only.error': True,
-             'on_delivery': dest._acked
+             'on_delivery': delivery_callback,
+             'stats_cb': stats_callback
              })
 
     def test_init_group_config(self):
@@ -182,7 +188,8 @@ class TestKafkaDestination(unittest.TestCase):
              'broker.version.fallback': DEFAULT_BROKER_VERSION_FALLBACK,
              'delivery.report.only.error': True,
              'group.id': conf['group_id'],
-             'on_delivery': dest._acked
+             'on_delivery': delivery_callback,
+             'stats_cb': stats_callback
              })
 
     def test_init_verbose_config(self):
@@ -456,7 +463,7 @@ class TestKafkaDestination(unittest.TestCase):
                'id': u'13254', 'dest_ip': u'209.143.151.70'}
 
         dest._kafka_producer.flush = MagicMock(name='flush')
-        dest._kafka_producer._acked = MagicMock(name='_acked')
+        syslogng_kafka.delivery_callback = MagicMock(name='delivery_callback')
         LOG.error = MagicMock(name='error')
 
         def produce(topic, msg, **kwargs):
@@ -468,7 +475,7 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertTrue(dest.send(msg))
 
         dest._kafka_producer.flush.assert_not_called()
-        dest._kafka_producer._acked.assert_not_called()
+        syslogng_kafka.delivery_callback.assert_not_called()
         LOG.error.assert_called_once()
 
     def test_produce_fails_buffer_error(self):
@@ -550,23 +557,23 @@ class TestKafkaDestination(unittest.TestCase):
         LOG.error = MagicMock(name='error')
         LOG.debug = MagicMock(name='debug')
 
-        dest._acked(None, None)
+        delivery_callback(None, None)
         LOG.error.assert_not_called()
         LOG.debug.assert_not_called()
 
         LOG.error = MagicMock(name='error')
         LOG.debug = MagicMock(name='debug')
 
-        dest._acked(FakeError("XXX"), FakeMessage("XXX"))
+        delivery_callback(FakeError("XXX"), FakeMessage("XXX"))
         LOG.error.assert_called_once()
         LOG.debug.assert_not_called()
 
         LOG.error = MagicMock(name='error')
         LOG.debug = MagicMock(name='debug')
 
-        dest._acked(None, FakeMessage("XXX"))
+        delivery_callback(None, FakeMessage("XXX"))
         LOG.error.assert_not_called()
-        LOG.debug.assert_not_called()
+        LOG.debug.assert_called_once()
 
         LOG.error = MagicMock(name='error')
         LOG.debug = MagicMock(name='debug')
@@ -576,14 +583,14 @@ class TestKafkaDestination(unittest.TestCase):
         LOG.error = MagicMock(name='error')
         LOG.debug = MagicMock(name='debug')
 
-        dest._acked(None, FakeMessage("XXX"))
+        delivery_callback(None, FakeMessage("XXX"))
         LOG.error.assert_not_called()
         LOG.debug.assert_called_once()
 
         LOG.error = MagicMock(name='error')
         LOG.debug = MagicMock(name='debug')
 
-        dest._acked(FakeError("XXX"), FakeMessage("XXX"))
+        delivery_callback(FakeError("XXX"), FakeMessage("XXX"))
         LOG.error.assert_called_once()
         LOG.debug.assert_not_called()
 
