@@ -3,8 +3,11 @@
 """A library that provides a syslog-ng Apache Kafka destination.
 """
 
+from __future__ import print_function
+
 import ast
-from time import sleep
+import json
+from time import time, sleep
 
 from confluent_kafka import KafkaException
 from confluent_kafka import Producer
@@ -93,7 +96,8 @@ class KafkaDestination(object):
             LOG.warn("Default broker version fallback %s "
                      "will be applied here." % DEFAULT_BROKER_VERSION_FALLBACK)
 
-        self._conf['on_delivery'] = self._acked
+        self._conf['on_delivery'] = delivery_callback
+        self._conf['stats_cb'] = stats_callback
         if 'verbose' in args:
             # provide a global `on_delivery` callback in the `Producer()` config
             # dict better for memory consumptions vs per message callback.
@@ -215,14 +219,24 @@ class KafkaDestination(object):
 
         return True
 
-    def _acked(self, err, msg):
-        if err is not None:
-            try:
-                LOG.error("Failed to deliver message: {0}: {1}"
-                          .format(msg.value(), err.str()))
-            except UnicodeDecodeError:
-                LOG.error("Failed to deliver message: {0}: {1}"
-                          .format(msg.value(), repr(err)))
-        else:
-            if self.verbose:
-                LOG.debug("Message produced: {0}".format(msg.value()))
+
+def delivery_callback(err, msg):
+    if err is not None:
+        try:
+            LOG.error("Failed to deliver message: {0}: {1}"
+                      .format(msg.value(), err.str()))
+        except UnicodeDecodeError:
+            LOG.error("Failed to deliver message: {0}: {1}"
+                      .format(msg.value(), repr(err)))
+    elif msg is not None:
+        LOG.debug("Message produced: {0}".format(msg.value()))
+
+
+def stats_callback(json_str):
+    producer_metrics = json.loads(json_str)
+    print("#"*80)
+    print("Time: %d" % time())
+    print("Message count: %s" % producer_metrics['msg_cnt'])
+    for broker in producer_metrics['brokers']:
+        print(producer_metrics['brokers'][broker]['throttle'])
+    print("#"*80)
