@@ -2,6 +2,12 @@
 History
 =======
 
+0.1.9 (2017-07-28)
+------------------
+
+* Handle `LogMessage` vs syslog-ng `values-pair` because it badly leaks if one do...
+* Make 3.7.x the supported version for now because of `LogMessage` issues.
+
 0.1.8 (2017-07-28)
 ------------------
 

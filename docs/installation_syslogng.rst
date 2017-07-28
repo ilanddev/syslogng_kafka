@@ -36,12 +36,12 @@ Pin down version:
 
         Package: syslog-ng-core
         Pin: origin "download.opensuse.org"
-        Pin: version 3.10.*
+        Pin: version 3.7.*
         Pin-Priority: 550
 
         Package: syslog-ng-mod-python
         Pin: origin "download.opensuse.org"
-        Pin: version 3.10.*
+        Pin: version 3.7.*
         Pin-Priority: 550
 
 Finally update and install:

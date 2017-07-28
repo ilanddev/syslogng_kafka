@@ -21,7 +21,7 @@
 Introduction
 ============
 
-**syslogng_kafka** provides a `Python`_ module for `syslog-ng`_ >= 3.7 allowing one
+**syslogng_kafka** provides a `Python`_ module for `syslog-ng`_ 3.7 allowing one
 to filter and forward syslog messages to `Apache Kafka`_ brokers.
 
 The implementation leverages `confluent-kafka`_ which uses the awesome `librdkafka`_

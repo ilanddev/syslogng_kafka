@@ -50,11 +50,11 @@ def parse_firewall_msg(msg):
     destination_port = -1
     mac = ''
     out = ''
-    len = -1
+    len_ = -1
     tos = -1
     proc = -1
     ttl = -1
-    id = -1
+    id_ = -1
     mark = -1
     seq = -1
     code = -1
@@ -76,7 +76,7 @@ def parse_firewall_msg(msg):
         elif w.startswith('OUT='):
             out = w.split('=')[1]
         elif w.startswith('LEN='):
-            len = w.split('=')[1]
+            len_ = w.split('=')[1]
         elif w.startswith('TOS='):
             tos = w.split('=')[1]
         elif w.startswith('PREC='):
@@ -84,7 +84,7 @@ def parse_firewall_msg(msg):
         elif w.startswith('TTL='):
             ttl = w.split('=')[1]
         elif w.startswith('ID='):
-            id = w.split('=')[1]
+            id_ = w.split('=')[1]
         elif w.startswith('MARK='):
             mark = w.split('=')[1]
         elif w.startswith('SEQ='):
@@ -92,7 +92,7 @@ def parse_firewall_msg(msg):
         elif w.startswith('CODE='):
             code = w.split('=')[1]
 
-    d = {}
+    d = dict()
     d['action'] = action
     d['src_ip'] = src
     d['dest_ip'] = dest
@@ -101,11 +101,11 @@ def parse_firewall_msg(msg):
     d['destination_port'] = destination_port
     d['mac_address'] = mac
     d['out'] = out
-    d['len'] = len
+    d['len'] = len_
     d['tos'] = tos
     d['proc'] = proc
     d['ttl'] = ttl
-    d['id'] = id
+    d['id'] = id_
     d['mark'] = mark
     d['seq'] = seq
     d['code'] = code

@@ -92,9 +92,8 @@ Sample driver configuration with every possible options. See below for documenta
                     programs("firewall,nat")
                     broker_version("0.8.2.1")
                     verbose("True")
-                    producer_config("{'client.id': 'sylog-ng'}")
+                    producer_config("{'client.id': 'sylog-ng-01', 'retry.backoff.ms': 100, 'message.send.max.retries': 5, 'queue.buffering.max.kbytes': 50240, 'default.topic.config': {'request.required.acks': 1, 'request.timeout.ms': 5000, 'message.timeout.ms': 300000}, 'queue.buffering.max.messages': 100000, 'queue.buffering.max.ms': 1000, 'statistics.interval.ms': 15000, 'socket.timeout.ms': 60000, 'retry.backoff.ms':100,}")
                     )
-                value-pairs(scope(rfc5424))
         );
     };
     log {
@@ -113,6 +112,7 @@ The available options are:
     - *verbose (optional): if wether or not to print messages in logs. False by default
     - *producer_config* (optional): The supported configuration values are dictated by the underlying librdkafka C library. For the full range of configuration properties please consult librdkafka’s documentation: https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
 
+** DO NOT USE `value-pairs` as indicated in syslog-ng documentation as you will get huge memory leaks...**
 
 Restart the syslog-ng service:
 
