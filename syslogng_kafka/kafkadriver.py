@@ -151,7 +151,7 @@ class KafkaDestination(object):
             self._kafka_producer = None
         return True
 
-    def send(self, msg):
+    def send(self, ro_msg):
         """ Send a message to the target service
 
         It should return True to indicate success, False will suspend the
@@ -161,31 +161,46 @@ class KafkaDestination(object):
         """
 
         # do nothing if msg is empty
-        if not msg:
+        if not ro_msg:
             return True
 
+        # no syslog-ng `values-pair` here we dealing with `LogMessage`
+        if type(ro_msg) != dict:
+            # syslog-ng `LogMessage` is read-only
+            # goal is rfc5424 we cannot use values-pair because of memory leaks
+            try:
+                msg = {'FACILITY': ro_msg.FACILITY, 'PRIORITY': ro_msg.PRIORITY,
+                       'HOST': ro_msg.HOST, 'PROGRAM': ro_msg.PROGRAM,
+                       'DATE': ro_msg.DATE, 'MESSAGE': ro_msg.MESSAGE}
+            except AttributeError:
+                LOG.error("Your version of syslog-ng is not supported. "
+                          "Please use syslog-ng 3.7.x")
+                return False
+        else:
+            LOG.warn("You are using `values-pair` if you are using "
+                     "syslog-ng <= 3.11 it is known to be leaking...")
+            msg = ro_msg
         try:
 
             # check if we do have a program filter defined.
-            msg_program = msg.get('PROGRAM')
+            msg_program = msg['PROGRAM']
             if self.programs is not None:
                 if msg_program not in self.programs:
                     # notify of success
                     return True
             if msg_program == 'firewall':
-                firewall_msg = msg.get('MESSAGE')
+                firewall_msg = msg['MESSAGE']
                 msg['MESSAGE'] = parse_firewall_msg(firewall_msg)
             # convert date string to UNIX timestamp
-            msg_date = msg.get('DATE')
+            msg_date = msg['DATE']
             if msg_date is not None:
                 msg['DATE'] = date_str_to_timestamp(msg_date)
 
             msg_string = str(msg)
 
             kwargs = {}
-            if self.msg_key:
-                if msg.get(self.msg_key):
-                    kwargs['key'] = msg.get(self.msg_key)
+            if self.msg_key and self.msg_key in msg.keys():
+                kwargs['key'] = msg[self.msg_key]
             if self.partition:
                 try:
                     kwargs['partition'] = int(self.partition)
@@ -234,9 +249,9 @@ def delivery_callback(err, msg):
 
 def stats_callback(json_str):
     producer_metrics = json.loads(json_str)
-    print("#"*80)
+    print("#" * 80)
     print("Time: %d" % time())
     print("Message count: %s" % producer_metrics['msg_cnt'])
     for broker in producer_metrics['brokers']:
         print(producer_metrics['brokers'][broker]['throttle'])
-    print("#"*80)
+    print("#" * 80)
