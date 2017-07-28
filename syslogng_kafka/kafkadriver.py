@@ -79,7 +79,7 @@ class KafkaDestination(object):
 
         if 'broker_version' in args:
             self.broker_version = args['broker_version']
-            if '.'.join(self.broker_version.split('.')[:2]) == '0.10':
+            if '.'.join(self.broker_version.split('.')[:2]) in ('0.10', '0.11'):
                 self._conf['api.version.request'] = True
             else:
                 self._conf['broker.version.fallback'] = self.broker_version
@@ -93,19 +93,16 @@ class KafkaDestination(object):
             LOG.warn("Default broker version fallback %s "
                      "will be applied here." % DEFAULT_BROKER_VERSION_FALLBACK)
 
+        self._conf['on_delivery'] = self._acked
         if 'verbose' in args:
             # provide a global `on_delivery` callback in the `Producer()` config
             # dict better for memory consumptions vs per message callback.
-            self._conf['on_delivery'] = self._acked
             self.verbose = ast.literal_eval(args['verbose'])
         if not self.verbose:
             # only interested in delivery failures here. We do provide a
             # global on_delivery callback in the Producer() config dict and
             # also set delivery.report.only.error.
-            # XXX not implemented in `confluent-kafka` <= 0.9.4
-            # as well as memory leaks. Let's wait for 0.11.x
-            # https://github.com/confluentinc/confluent-kafka-python/issues/84
-            # self._conf['delivery.report.only.error'] = True
+            self._conf['delivery.report.only.error'] = True
             LOG.info("Verbose mode is OFF: you will not be able to see "
                      "messages in here. Failures only. Use 'verbose=('True')' "
                      "in your destination options to see successfully "

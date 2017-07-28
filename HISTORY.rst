@@ -2,6 +2,11 @@
 History
 =======
 
+0.1.7 (2017-07-27)
+------------------
+
+* Update confluent-kafka dependency to version 0.11.0: https://github.com/confluentinc/confluent-kafka-python/releases/tag/v0.11.0
+
 0.1.6 (2017-07-04)
 ------------------
 
