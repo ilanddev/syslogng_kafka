@@ -10,11 +10,11 @@ import unittest
 
 from syslogng_kafka.util import date_str_to_timestamp
 from syslogng_kafka.util import parse_firewall_msg
+from syslogng_kafka.util import parse_nat_msg
 from syslogng_kafka.util import parse_str_list
 
 
 class TestUtil(unittest.TestCase):
-
     def test_parser_str_list(self):
         s = 'x'
         l_s = parse_str_list(s)
@@ -96,6 +96,35 @@ class TestUtil(unittest.TestCase):
                     'mac_address': '00:50:56:01:43:50:00:1f:6c:3d:d7:f7:08:00',
                     'action': 'drop', 'destination_port': -1, 'out': '',
                     'proc': '0x00', 'id': '65299', 'dest_ip': '10.11.12.181'}
+
+        d1 = ast.literal_eval(str(expected))
+        self.assertDictEqual(d1, msg_s)
+
+    def test_parse_nat_msg(self):
+        msg = \
+            '[69e9c2b7-ee9f-4a3e-80f0-8ffc66aac147]: DNAT_IN=vNic_0 OUT= ' \
+            'MAC=00:50:56:01:35:27:00:a7:42:53:c5:c2:08:00 SRC=173.8.227.70 ' \
+            'DST=209.143.151.73 LEN=52 TOS=0x00 PREC=0x00 TTL=122 ID=7082 DF ' \
+            'PROTO=TCP SPT=54740 DPT=3389 WINDOW=8192 RES=0x00 SYN URGP=0 '
+
+        msg_s = parse_nat_msg(msg)
+
+        expected = {'dest_ip': '209.143.151.73',
+                    'dnat_in': 'vNic_0',
+                    'dpt': '3389',
+                    'id': '7082',
+                    'len': '52',
+                    'mac_address': '00:50:56:01:35:27:00:a7:42:53:c5:c2:08:00',
+                    'out': '',
+                    'proc': '0x00',
+                    'proto': 'TCP',
+                    'res': '0x00',
+                    'spt': '54740',
+                    'src_ip': '173.8.227.70',
+                    'tos': '0x00',
+                    'ttl': '122',
+                    'urgp': '0',
+                    'window': '8192'}
 
         d1 = ast.literal_eval(str(expected))
         self.assertDictEqual(d1, msg_s)

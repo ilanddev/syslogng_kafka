@@ -110,3 +110,83 @@ def parse_firewall_msg(msg):
     d['seq'] = seq
     d['code'] = code
     return d
+
+
+def parse_nat_msg(msg):
+    """ Parse a syslog message from the nat program into a python
+    dictionary.
+
+    :param msg: nat msg from syslog
+    :return: a dictionary of nat related key value pairs
+    """
+
+    dnat_in = ''
+    out = ''
+    mac = ''
+    src = -1
+    dest = -1
+    len_ = -1
+    tos = -1
+    proc = -1
+    ttl = -1
+    id_ = -1
+    proto = ''
+    spt = -1
+    dpt = -1
+    window = -1
+    res = ''
+    urgp = -1
+
+    words = msg.split(' ')
+    for w in words:
+        if w.startswith('DNAT_IN='):
+            dnat_in = w.split('=')[1]
+        elif w.startswith('OUT='):
+            out = w.split('=')[1]
+        elif w.startswith('MAC='):
+            mac = w.split('=')[1]
+        elif w.startswith('SRC='):
+            src = w.split('=')[1]
+        elif w.startswith('DST='):
+            dest = w.split('=')[1]
+        elif w.startswith('LEN='):
+            len_ = w.split('=')[1]
+        elif w.startswith('TOS='):
+            tos = w.split('=')[1]
+        elif w.startswith('PREC='):
+            proc = w.split('=')[1]
+        elif w.startswith('TTL='):
+            ttl = w.split('=')[1]
+        elif w.startswith('ID='):
+            id_ = w.split('=')[1]
+        elif w.startswith('PROTO='):
+            proto = w.split('=')[1]
+        elif w.startswith('SPT='):
+            spt = w.split('=')[1]
+        elif w.startswith('DPT='):
+            dpt = w.split('=')[1]
+        elif w.startswith('WINDOW='):
+            window = w.split('=')[1]
+        elif w.startswith('RES='):
+            res = w.split('=')[1]
+        elif w.startswith('URGP='):
+            urgp = w.split('=')[1]
+
+    d = dict()
+    d['dnat_in'] = dnat_in
+    d['out'] = out
+    d['mac_address'] = mac
+    d['src_ip'] = src
+    d['dest_ip'] = dest
+    d['len'] = len_
+    d['tos'] = tos
+    d['proc'] = proc
+    d['ttl'] = ttl
+    d['id'] = id_
+    d['proto'] = proto
+    d['spt'] = spt
+    d['dpt'] = dpt
+    d['window'] = window
+    d['res'] = res
+    d['urgp'] = urgp
+    return d
