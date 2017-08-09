@@ -15,6 +15,7 @@ from confluent_kafka import Producer
 from .log import LOG
 from .util import date_str_to_timestamp
 from .util import parse_firewall_msg
+from .util import parse_nat_msg
 from .util import parse_str_list
 
 # this is the default broker version fallback defined by `librdkafka`
@@ -191,6 +192,9 @@ class KafkaDestination(object):
             if msg_program == 'firewall':
                 firewall_msg = msg['MESSAGE']
                 msg['MESSAGE'] = parse_firewall_msg(firewall_msg)
+            elif msg_program == 'nat':
+                nat_msg = msg['MESSAGE']
+                msg['MESSAGE'] = parse_nat_msg(nat_msg)
             # convert date string to UNIX timestamp
             msg_date = msg['DATE']
             if msg_date is not None:
