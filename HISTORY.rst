@@ -2,8 +2,8 @@
 History
 =======
 
-0.1.10(unreleased)
-------------------
+0.1.10 (2017-08-09)
+-------------------
 
 * `nat` program pre-processing
 
