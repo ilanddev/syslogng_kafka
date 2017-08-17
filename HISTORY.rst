@@ -26,15 +26,12 @@ History
 0.1.6 (2017-07-04)
 ------------------
 
-* Disable `delivery.report.ony.error` on callbacks because of a bug in
-`confluent-kafka`: https://github.com/confluentinc/confluent-kafka-python/issues/84
-Let's revisit when 0.11 is released.
+* Disable `delivery.report.ony.error` on callbacks because of a bug in `confluent-kafka`: https://github.com/confluentinc/confluent-kafka-python/issues/84 Let's revisit when 0.11 is released.
 
 0.1.5 (2017-07-03)
 ------------------
 
-* provide a global `on_delivery` callback in the `Producer()` config
-dict better for memory consumptions vs per message callback.
+* provide a global `on_delivery` callback in the `Producer()` config dict better for memory consumptions vs per message callback.
 
 0.1.4 (2017-06-30)
 ------------------
