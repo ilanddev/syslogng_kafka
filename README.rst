@@ -1,4 +1,6 @@
-**syslog-ng Apache Kafka destination**
+=============================================
+syslog-ng-mod-python Apache Kafka destination
+=============================================
 
 .. image:: https://img.shields.io/pypi/v/syslogng_kafka.svg
     :target: https://pypi.python.org/pypi/syslogng_kafka
@@ -17,13 +19,6 @@
 .. image:: https://img.shields.io/badge/license-Apache2.0-blue.svg?style=flat-square
     :target: https://opensource.org/licenses/Apache-2.0
     :alt: License
-
-- Free software: Apache Software License 2.0
-- Documentation: https://syslogng-kafka.readthedocs.io.
-
-============
-Introduction
-============
 
 **syslogng_kafka** provides a `Python`_ module for `syslog-ng`_ 3.7 allowing one
 to filter and forward syslog messages to `Apache Kafka`_ brokers.
