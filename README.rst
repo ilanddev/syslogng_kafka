@@ -14,6 +14,10 @@
     :target: https://requires.io/github/ilanddev/syslogng_kafka/requirements/?branch=master
     :alt: Requirements Status
 
+.. image:: https://img.shields.io/badge/license-Apache2.0-blue.svg?style=flat-square
+    :target: https://opensource.org/licenses/Apache-2.0
+    :alt: License
+
 - Free software: Apache Software License 2.0
 - Documentation: https://syslogng-kafka.readthedocs.io.
 
