@@ -6,7 +6,7 @@ librdkafka installation
 
 `syslogng_kafka`_ depends on the `confluent-kafka`_ lib:
 
-`confluent-kafka`_ requires `librdkafka`_ >= 0.9.1 which is currently not
+`confluent-kafka`_ requires `librdkafka`_ >= 0.11.0 which is currently not
 installed with mainstream Linux distribution.
 
 librdkafka is a C library implementation of the Apache `Kafka`_ protocol,
@@ -34,15 +34,15 @@ Below are extracts from that page if you are in a hurry:
 
 .. code-block:: console
 
-    $ wget -qO - http://packages.confluent.io/deb/3.2/archive.key | sudo apt-key add -
+    $ wget -qO - http://packages.confluent.io/deb/3.3/archive.key | sudo apt-key add -
 
 Add the repository to your /etc/apt/sources.list:
 
 .. code-block:: console
 
-    $ sudo add-apt-repository "deb [arch=amd64] http://packages.confluent.io/deb/3.2 stable main"
+    $ sudo add-apt-repository "deb [arch=amd64] http://packages.confluent.io/deb/3.3 stable main"
 
-Pin down the version of `librdkafka`_ to 0.9.x
+Pin down the version of `librdkafka`_ to 0.11.x
 
 .. code-block:: console
 
@@ -52,17 +52,17 @@ Then add the content below::
 
   Package: librdkafka1
   Pin: origin "packages.confluent.io"
-  Pin: version 0.9.*
+  Pin: version 0.11.*
   Pin-Priority: 550
 
   Package: librdkafka-dev
   Pin: origin "packages.confluent.io"
-  Pin: version 0.9.*
+  Pin: version 0.11.*
   Pin-Priority: 550
 
   Package: librdkafka++1
   Pin: origin "packages.confluent.io"
-  Pin: version 0.9.*
+  Pin: version 0.11.*
   Pin-Priority: 550
 
 Then update and install:
