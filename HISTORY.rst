@@ -2,10 +2,15 @@
 History
 =======
 
+0.1.11 (2017-08-23)
+-------------------
+
+* `display_stats` options to turn on and off broker statistics
+
 0.1.10 (2017-08-09)
 -------------------
 
-* `nat` program pre-processing
+* NSX edge `nat` program pre-processing
 
 0.1.9 (2017-07-28)
 ------------------

@@ -7,7 +7,7 @@ from __future__ import print_function
 
 import ast
 import json
-from time import time, sleep
+from time import sleep
 
 from confluent_kafka import KafkaException
 from confluent_kafka import Producer
@@ -39,6 +39,7 @@ class KafkaDestination(object):
         self.group_id = None
         self.broker_version = None
         self.verbose = False
+        self.display_stats = False
         self.producer_config = None
 
     def init(self, args):
@@ -98,7 +99,6 @@ class KafkaDestination(object):
                      "will be applied here." % DEFAULT_BROKER_VERSION_FALLBACK)
 
         self._conf['on_delivery'] = delivery_callback
-        self._conf['stats_cb'] = stats_callback
         if 'verbose' in args:
             # provide a global `on_delivery` callback in the `Producer()` config
             # dict better for memory consumptions vs per message callback.
@@ -112,6 +112,13 @@ class KafkaDestination(object):
                      "messages in here. Failures only. Use 'verbose=('True')' "
                      "in your destination options to see successfully "
                      "processed messages in your logs.")
+
+        # display broker stats?
+        if 'display_stats' in args:
+            self.display_stats = ast.literal_eval(args['display_stats'])
+        if self.display_stats:
+            self._conf['stats_cb'] = stats_callback
+            LOG.info("Broker statistics will be displayed.")
 
         LOG.info(
             "Initialization of Kafka Python driver w/ args=%s" % self._conf)
@@ -253,9 +260,6 @@ def delivery_callback(err, msg):
 
 def stats_callback(json_str):
     producer_metrics = json.loads(json_str)
-    print("#" * 80)
-    print("Time: %d" % time())
-    print("Message count: %s" % producer_metrics['msg_cnt'])
+    LOG.info("Message count: %s" % producer_metrics['msg_cnt'])
     for broker in producer_metrics['brokers']:
-        print(producer_metrics['brokers'][broker]['throttle'])
-    print("#" * 80)
+        LOG.info(producer_metrics['brokers'][broker]['throttle'])

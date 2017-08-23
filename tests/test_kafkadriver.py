@@ -33,7 +33,8 @@ class TestKafkaDestination(unittest.TestCase):
 
     def test_init_config_minimum(self):
         dest = KafkaDestination()
-        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic'}
+        conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
+                'display_stats': 'True'}
         self.assertTrue(dest.init(conf))
         self.assertEquals(dest.hosts, conf['hosts'])
         self.assertEquals(dest.topic, conf['topic'])
@@ -41,6 +42,7 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, None)
         self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
         self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.display_stats, True)
         self.assertEquals(
             dest._conf,
             {'api.version.request': False,
@@ -110,7 +112,7 @@ class TestKafkaDestination(unittest.TestCase):
         # single program to filter against
         dest = KafkaDestination()
         conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
-                'programs': 'firewall'}
+                'programs': 'firewall', 'display_stats': 'True'}
         self.assertTrue(dest.init(conf))
         self.assertEquals(dest.hosts, conf['hosts'])
         self.assertEquals(dest.topic, conf['topic'])
@@ -118,6 +120,7 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, None)
         self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
         self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.display_stats, True)
         self.assertEquals(
             dest._conf,
             {'api.version.request': False,
@@ -173,7 +176,7 @@ class TestKafkaDestination(unittest.TestCase):
     def test_init_group_config(self):
         dest = KafkaDestination()
         conf = {'hosts': '192.168.0.1', 'topic': 'my_topic',
-                'group_id': 'my_group_id'}
+                'group_id': 'my_group_id', 'display_stats': 'True'}
         self.assertTrue(dest.init(conf))
         self.assertEquals(dest.hosts, conf['hosts'])
         self.assertEquals(dest.topic, conf['topic'])
@@ -181,6 +184,7 @@ class TestKafkaDestination(unittest.TestCase):
         self.assertEquals(dest.group_id, conf['group_id'])
         self.assertEquals(dest.broker_version, DEFAULT_BROKER_VERSION_FALLBACK)
         self.assertEquals(dest.verbose, False)
+        self.assertEquals(dest.display_stats, True)
         self.assertEquals(
             dest._conf,
             {'api.version.request': False,
